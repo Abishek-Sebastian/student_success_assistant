@@ -1,0 +1,4 @@
+file,grain,best_use,caution
+temporal_attempt_sequences.csv,one row per attempt,"Sequence inspection, event-level rolling features, exploratory plots",Repeated student-level label is context only; do not row-split or treat as per-event target
+temporal_student_weekly_panel.csv,one row per student-week,Activity timeline plots and future dynamic feature research,Repeated student-level label is not a valid week-specific dropout target
+temporal_student_summary.csv,one row per student,XGBoost/Gradient Boosting with temporal summary features,All observed history is used; not an early snapshot unless features are rebuilt at a cutoff

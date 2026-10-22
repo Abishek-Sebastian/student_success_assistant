@@ -1,0 +1,6 @@
+check,rows,issues,issue_definition
+students,500,0,unparseable signup date
+attempts,2453,0,unparseable attempt timestamp
+attempts,2453,0,attempt before signup
+attempts,2453,3,missing/non-numeric/out-of-range score
+attempts,2453,0,negative duration

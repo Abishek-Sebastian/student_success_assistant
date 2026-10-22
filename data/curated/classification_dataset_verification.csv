@@ -1,0 +1,5 @@
+dataset,rows,unique_students,target_positive_rate,missing_signup_cutoffs,future_event_violations
+classification_snapshot_7d,500,500,0.25,0,0
+classification_snapshot_14d,500,500,0.25,0,0
+classification_snapshot_30d,500,500,0.25,0,0
+classification_first3_attempts,438,438,0.182648401826484,0,0

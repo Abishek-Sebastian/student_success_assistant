@@ -1,0 +1,7 @@
+check,violations
+outcomes IDs exist in students,0
+quiz student IDs exist in students,0
+explanation student IDs exist in students,0
+students without outcomes,0
+students without quiz attempts,1
+students without explanations,74

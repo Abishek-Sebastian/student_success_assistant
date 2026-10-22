@@ -1,0 +1,5 @@
+table,rows,columns,missing_cells,exact_duplicate_rows,memory_bytes
+students,500,6,37,0,162820
+quiz_attempts,2453,6,95,0,586399
+explanations,724,5,664,0,271889
+outcome,500,2,0,0,52257
