@@ -1,0 +1,4 @@
+split,students,positives,prevalence
+train,300,75,0.25
+validation,100,25,0.25
+test,100,25,0.25

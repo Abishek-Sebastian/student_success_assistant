@@ -1,0 +1,3 @@
+policy,precision,recall,flagged_rate,note
+contact_everyone,0.25,1.0,1.0,Operational upper bound on recall; contacts all students
+majority_negative,,0.0,0.0,Conventional majority-class prediction at default threshold
