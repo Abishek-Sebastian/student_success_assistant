@@ -1,3 +1,0 @@
-precision,recall,f1,PR_AUC,ROC_AUC,TN,FP,FN,TP,regime,threshold,train_students,validation_students,test_students,train_attempt_rows,train_last_date,validation_last_date,test_first_date
-0.5357142857142857,0.7142857142857143,0.6122448979591837,0.6494655486042702,0.8657142857142857,62,13,6,15,random_student_interpolation,0.5249999999999999,286,96,96,1192,,,
-0.21428571428571427,1.0,0.35294117647058826,0.4722222222222222,0.9605734767025089,82,11,0,3,temporal_student_extrapolation_proxy,0.1,286,96,96,1047,2026-08-20,2026-09-01,2026-09-01

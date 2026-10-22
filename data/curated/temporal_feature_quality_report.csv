@@ -1,0 +1,8 @@
+check,value,notes
+prediction_rows,1476,Attempt-level rows at landmarks 2 through penultimate
+eligible_students,438,Students with at least 3 valid timed attempts
+students_with_1_attempt,21,Descriptive analysis only; no temporal prediction rows
+students_with_2_attempts,40,Descriptive analysis only; no temporal prediction rows
+model_a_positive_rows,80,Next attempt is final observed AND supplied dropout label is positive
+model_b_positive_rows,166,Supplied student-level dropout label repeated across eligible landmarks
+missing_dropout_label_rows,0,Expected zero

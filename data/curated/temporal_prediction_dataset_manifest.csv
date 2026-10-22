@@ -1,0 +1,4 @@
+file,grain,purpose,label_semantics,leakage_notes
+temporal_attempt_prediction_rows.csv,one row per student per eligible attempt landmark,Model A and Model B attempt-level temporal prediction,Model A = next attempt is final observed AND target_dropout=1; Model B = target_dropout,Features use history through current attempt only; observed_attempt_count and student_last_attempt_dt are metadata and excluded from features
+temporal_eligibility_report.csv,one row per student,Coverage and separate analysis of students with fewer than 3 attempts,Student-level supplied dropout label,
+temporal_feature_quality_report.csv,one row per check,Counts and integrity summary,Descriptive,

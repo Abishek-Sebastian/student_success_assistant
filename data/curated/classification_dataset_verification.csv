@@ -1,5 +1,5 @@
-dataset,rows,unique_students,target_positive_rate,missing_signup_cutoffs,future_event_violations
-classification_snapshot_7d,500,500,0.25,0,0
-classification_snapshot_14d,500,500,0.25,0,0
-classification_snapshot_30d,500,500,0.25,0,0
-classification_first3_attempts,438,438,0.182648401826484,0,0
+dataset,rows,unique_students,target_positive_rate,missing_signup_cutoffs,future_event_violations,right_censored_excluded,observation_end
+classification_snapshot_7d,489,489,0.2556237218813906,0,0,11.0,2026-09-28 14:00:00
+classification_snapshot_14d,469,469,0.26439232409381663,0,0,31.0,2026-09-28 14:00:00
+classification_snapshot_30d,375,375,0.31466666666666665,0,0,125.0,2026-09-28 14:00:00
+classification_first3_attempts,438,438,0.182648401826484,0,0,,

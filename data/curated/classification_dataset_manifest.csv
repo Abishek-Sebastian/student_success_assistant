@@ -1,5 +1,6 @@
 file,purpose,recommended_use
-classification_snapshot_14d.csv,Primary fixed signup-relative snapshot; one row/student,Primary Random Forest/boosting comparison
-classification_snapshot_7d.csv,Early 7-day snapshot sensitivity analysis,Separate experiment; don't pool snapshots
-classification_snapshot_30d.csv,Later 30-day snapshot sensitivity analysis,Separate experiment; don't pool snapshots
+classification_snapshot_14d.csv,14-day signup snapshot; right-censored students excluded,Train/evaluate only on eligible students; target timestamp remains unavailable
+classification_snapshot_7d.csv,7-day signup snapshot; right-censored students excluded,Train/evaluate only on eligible students; target timestamp remains unavailable
+classification_snapshot_30d.csv,30-day signup snapshot; right-censored students excluded,Train/evaluate only on eligible students; target timestamp remains unavailable
+horizon_eligibility_audit.csv,Per-student eligibility/exclusion audit for 7/14/30-day horizons,Audit which students are ineligible for each horizon and why
 classification_first3_attempts.csv,First-three-attempt cutoff; students with >=3 eligible attempts only,Exploratory attempt-count design; report selection bias

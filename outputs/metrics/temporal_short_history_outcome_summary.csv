@@ -1,0 +1,5 @@
+observed_attempt_count,target_dropout,students,dropout_label
+1,0,1,no
+1,1,20,yes
+2,0,16,no
+2,1,24,yes
