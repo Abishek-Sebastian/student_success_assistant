@@ -1,0 +1,4 @@
+stage,rows,students,positive_snapshots,positive_rate,students_with_checkpoint,features_before_encoding
+A,500,500,125,0.25,500,5
+B,977,499,228,0.23336745138178097,499,19
+C,1476,438,166,0.11246612466124661,438,19
