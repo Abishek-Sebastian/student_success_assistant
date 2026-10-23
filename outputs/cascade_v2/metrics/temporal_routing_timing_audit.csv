@@ -1,0 +1,2 @@
+students_with_any_attempt_by_day30,students_with_more_than_3_attempts_by_day30,students_whose_latest_attempt_by_day30_is_before_day14,interpretation
+499,191,127,Using day-30 counts/latest landmarks for a decision made before day 30 leaks future activity.

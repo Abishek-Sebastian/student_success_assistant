@@ -1,0 +1,4 @@
+horizon_days,rows,unique_students,positive_rate,feature_count,snapshot_cutoff_after_observation_end
+7,500,500,0.25,53,0
+14,500,500,0.25,53,0
+30,500,500,0.25,53,0

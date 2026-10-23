@@ -1,0 +1,13 @@
+route,horizon_days,precision_floor,model,threshold,validation_recall,validation_precision,validation_feasible
+7d_snapshot,7,0.4,random_forest,0.2969638974753907,0.8518518518518519,0.4107142857142857,True
+7d_snapshot,7,0.5,random_forest,0.4858687652110614,0.6296296296296297,0.53125,True
+7d_snapshot,7,0.6,logistic,0.907782391688488,0.3333333333333333,0.6,True
+14d_snapshot,14,0.4,random_forest,0.2978335427221174,0.9259259259259259,0.43103448275862066,True
+14d_snapshot,14,0.5,hist_gradient_boosting,0.2747874458153523,0.8148148148148148,0.55,True
+14d_snapshot,14,0.6,hist_gradient_boosting,0.4069583230232962,0.7037037037037037,0.6129032258064516,True
+30d_snapshot,30,0.4,random_forest,0.2136169940681708,1.0,0.42857142857142855,True
+30d_snapshot,30,0.5,logistic,0.4162476170672686,0.8888888888888888,0.5,True
+30d_snapshot,30,0.6,random_forest,0.4463994867871171,0.5925925925925926,0.64,True
+temporal_latest_landmark,30,0.4,hist_gradient_boosting,0.17203325842074768,0.75,0.5,True
+temporal_latest_landmark,30,0.5,hist_gradient_boosting,0.17203325842074768,0.75,0.5,True
+temporal_latest_landmark,30,0.6,hist_gradient_boosting,,,,False

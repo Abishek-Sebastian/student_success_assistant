@@ -1,0 +1,4 @@
+horizon_days,n_students,rows,max_source_after_cutoff_rows,max_source_after_cutoff_rate,missing_cutoff_rows,missing_target_rows,duplicate_student_rows
+7,500,500,0,0.0,0,0,0
+14,500,500,0,0.0,0,0,0
+30,500,500,0,0.0,0,0,0

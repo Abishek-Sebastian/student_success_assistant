@@ -1,0 +1,6 @@
+age_since_signup,route,uses_future_information,status
+<7 days,defer,False,no alert by design
+7–<14 days,7-day snapshot,False,enable only if validation policy feasible; test floor currently unstable
+14–<30 days,14-day snapshot,False,recommended interim route; temporal branch shadow-only
+>=30 days,30-day snapshot,False,"high-recall candidate at 40% floor, high alert burden"
+"14–<30 days, >3 attempts observed by current decision time",temporal Model B (future candidate),False,not enabled until per-decision-time dataset and student-level precision validation
