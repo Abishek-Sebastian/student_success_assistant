@@ -1,0 +1,5 @@
+task,evaluation_unit,regime,train_students,validation_students,test_students,train_rows,validation_rows,test_rows,train_cutoff,validation_cutoff,test_start
+model_a_near_term_dropout,attempt,random,262,88,88,870,305,301,,,
+model_a_near_term_dropout,attempt,chronological,262,88,88,925,281,270,2026-07-22,2026-08-01,2026-08-01
+model_b_eventual_dropout,student_any_landmark,random,262,88,88,870,305,301,,,
+model_b_eventual_dropout,student_any_landmark,chronological,262,88,88,925,281,270,2026-07-22,2026-08-01,2026-08-01
