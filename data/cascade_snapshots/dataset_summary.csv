@@ -1,0 +1,8 @@
+dataset,rows,unique_students,positive,negative,target_unobserved,positive_rate_observed
+A,500,500,21,479,0,0.042
+B_retrospective_capped,478,478,50,428,0,0.10460251046025104
+B_operational_after_attempt_1,478,478,24,454,0,0.0502092050209205
+B_operational_censored_rows,21,21,0,0,21,
+C1_penultimate_only,374,374,54,320,0,0.1443850267379679
+C2_rolling,1038,374,54,984,0,0.05202312138728324
+C2_censored_rows,438,438,0,0,438,
