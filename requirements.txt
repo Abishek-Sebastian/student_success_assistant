@@ -6,3 +6,4 @@ jupyter
 scikit-learn
 streamlit
 python-dotenv
+xgboost
