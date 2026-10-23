@@ -278,3 +278,32 @@ Do not change several dimensions at once in the early experiments; otherwise, im
 10. Before claiming end-to-end cascade performance, finalise how the system handles students who do not make another attempt and how upstream stage predictions route them.
 
 **Bottom line:** use a conservative, leakage-safe modelling protocol. The most urgent unresolved issue is not scaling or model choice; it is making sure the B-stage target matches the real decision the product needs to make.
+
+
+## Updated operational objective: maximize recall subject to a precision floor
+
+For intervention targeting, the primary policy objective is to **maximize recall while keeping precision at or above a prespecified floor**. The current benchmark uses 0.50 as a provisional default and reports 0.30, 0.40, and 0.60 sensitivity settings. This floor should ultimately be approved by the project/business owner.
+
+- Do not use a fixed probability cutoff of 0.5 as the operational rule.
+- Select each candidate threshold from development out-of-fold predictions only, maximizing recall among thresholds whose development precision meets the floor.
+- Evaluate the selected threshold once on the locked student-level test set. Report test precision, recall, TP, FP, FN, and the number flagged. If test precision falls below the floor, the policy has not met the operating requirement.
+- Keep average precision as a useful ranking diagnostic, but make precision-constrained recall the decision metric.
+- Report whether any feasible operating point exists. If none exists, do not silently relax the precision floor; report that the model cannot satisfy the requirement under the current features/data.
+- Sensitivity-test multiple precision floors and report uncertainty because test positives are sparse.
+
+### End-to-end cascade evaluation
+
+The true end-to-end objective is to maximize **student-level cascade recall** subject to a minimum **student-level cascade precision**. Thresholds must be selected jointly by simulating the full A -> B -> C routing policy on development OOF predictions, then frozen before the locked test. Count each student once, even if they have several snapshots. Report TP, FP, FN, precision, recall, number of unique students flagged, and stage-wise coverage/routing.
+
+The baseline now computes an end-to-end policy against the common `dropout_binary_audit_only` eventual-outcome label. Stage-specific models are trained on their existing targets, but stage model selection and joint A/B/C threshold tuning use development out-of-fold scores against the common eventual outcome. The student is counted once and is flagged if any actionable A/B/C checkpoint crosses its selected threshold. B/C use only snapshots with a subsequent attempt observed; censored final prefixes are not treated as actionable next-attempt checkpoints. This is an eventual-dropout identification metric, not a validation of warning timeliness: the data has no true dropout timestamp. The stage-specific training targets still differ, so the next experiment should compare them with models trained at each prefix against the common eventual-outcome target.
+
+### Baseline update (2026-10-23)
+
+The baseline runner now writes:
+- `precision_constrained_recall.csv`: thresholds selected from development OOF predictions for precision floors 0.30, 0.40, 0.50, and 0.60, with locked-test results.
+- `development_oof_predictions.csv`: per-snapshot OOF scores used for policy selection.
+- `locked_test_predictions.csv`: held-out probabilities and predictions at 0.5 and the primary selected precision floor.
+- `end_to_end_cascade_precision_recall.csv`: jointly selected A/B/C thresholds and locked-test student-level cascade precision/recall for each precision floor.
+- `cascade_stage_model_selection.csv`: development OOF stage model selection against the common eventual-outcome label.
+- `cascade_test_predictions_precision_*.csv`: student-level locked-test predictions, stage flags, and first flagging stage.
+- `BASELINE_FINDINGS_PRECISION_RECALL.md`: interpretation of stage-specific and end-to-end precision-constrained recall results.

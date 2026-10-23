@@ -111,6 +111,39 @@
       "lesson_L3_score_mean",
       "lesson_L3_time_mean"
     ],
+    "B_rolling_early": [
+      "age_group",
+      "country",
+      "signup_date",
+      "device",
+      "score_valid_count",
+      "score_missing_or_invalid_count",
+      "score_missing_or_invalid_fraction",
+      "score_mean",
+      "score_last_valid",
+      "score_last3_mean",
+      "score_slope",
+      "time_valid_count",
+      "time_missing_count",
+      "time_missing_fraction",
+      "time_mean",
+      "time_last_valid",
+      "time_last3_mean",
+      "time_total_valid_sum",
+      "time_slope",
+      "mean_gap_hours",
+      "last_gap_hours",
+      "history_span_hours",
+      "lesson_L1_attempt_count",
+      "lesson_L1_score_mean",
+      "lesson_L1_time_mean",
+      "lesson_L2_attempt_count",
+      "lesson_L2_score_mean",
+      "lesson_L2_time_mean",
+      "lesson_L3_attempt_count",
+      "lesson_L3_score_mean",
+      "lesson_L3_time_mean"
+    ],
     "C1_penultimate_only": [
       "age_group",
       "country",
@@ -198,6 +231,8 @@
     "B_retrospective_capped": "Project's proposed B history: N=2 uses k=1; N>=3 uses k=2. Retrospective comparison only; timing depends on eventual N.",
     "B_operational_after_attempt_1": "Operational comparator: after attempt 1; predicts whether attempt 2 is the final recorded attempt with positive dropout label.",
     "B_operational_censored_rows": "After-attempt-1 snapshots with no observed second attempt; target is blank and these rows are not trainable for the next-attempt target.",
+    "B_rolling_early": "Rolling operational B snapshots after k=1 and k=2 when a next attempt is observed; positive iff the next attempt is the final recorded attempt and dropout label is positive.",
+    "B_rolling_early_censored_rows": "Final observed snapshots at k=1 or k=2 without a subsequent attempt; target is blank, not negative.",
     "C1_penultimate_only": "One row for N>=4; prefix N-1; target is supplied eventual dropout label.",
     "C2_rolling": "Rows for every prefix k>=3 with an observed next attempt; positive only if that next attempt is final and dropout label is positive.",
     "C2_censored_rows": "Final observed prefixes with no next attempt in the historical data; target is blank and these rows are not trainable for next-attempt target."
@@ -256,6 +291,24 @@
       "positive": 0,
       "negative": 0,
       "target_unobserved": 21,
+      "positive_rate_observed": null
+    },
+    {
+      "dataset": "B_rolling_early",
+      "rows": 916,
+      "unique_students": 478,
+      "positive": 50,
+      "negative": 866,
+      "target_unobserved": 0,
+      "positive_rate_observed": 0.05458515283842795
+    },
+    {
+      "dataset": "B_rolling_early_censored_rows",
+      "rows": 61,
+      "unique_students": 61,
+      "positive": 0,
+      "negative": 0,
+      "target_unobserved": 61,
       "positive_rate_observed": null
     },
     {

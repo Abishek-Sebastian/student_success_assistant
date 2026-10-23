@@ -12,6 +12,8 @@
 | B_retrospective_capped | 478 | 478 | 50 | 428 | 0 | 0.105 |
 | B_operational_after_attempt_1 | 478 | 478 | 24 | 454 | 0 | 0.050 |
 | B_operational_censored_rows | 21 | 21 | 0 | 0 | 21 | — |
+| B_rolling_early | 916 | 478 | 50 | 866 | 0 | 0.055 |
+| B_rolling_early_censored_rows | 61 | 61 | 0 | 0 | 61 | — |
 | C1_penultimate_only | 374 | 374 | 54 | 320 | 0 | 0.144 |
 | C2_rolling | 1038 | 374 | 54 | 984 | 0 | 0.052 |
 | C2_censored_rows | 438 | 438 | 0 | 0 | 438 | — |
@@ -26,11 +28,12 @@
 - `dropped_out` and the normalized label are excluded from feature columns.
 - `refund_requested` is excluded from model features pending timing validation.
 - Score sentinel 999 is excluded from score aggregates; missing duration is not replaced by zero.
-- C2 rows without a historical next attempt are exported separately with unobserved target.
+- B rolling and C2 rows without a historical next attempt are exported separately with unobserved target.
 
 ## Interpretation cautions
 
 - B_retrospective_capped is the requested retrospective design but its snapshot time depends on eventual attempt count; it is not a deployable routing rule as written.
-- B_operational_after_attempt_1 is included as a strict operational comparator.
+- B_operational_after_attempt_1 is included as a strict operational comparator; B_rolling_early adds k=1 and k=2 snapshots.
+- B_rolling_early and C2 are conditional next-attempt models, not direct no-return/dropout-time models.
 - C1 is retrospective penultimate-only; C2 is rolling and operationally meaningful when each new attempt is observed.
 - These are dataset/label audits, not model-performance results.

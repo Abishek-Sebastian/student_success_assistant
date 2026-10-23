@@ -188,6 +188,8 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     B_rows: list[dict[str, Any]] = []
     B_fixed_rows: list[dict[str, Any]] = []
     B_fixed_censored_rows: list[dict[str, Any]] = []
+    B_rolling_rows: list[dict[str, Any]] = []
+    B_rolling_censored_rows: list[dict[str, Any]] = []
     C1_rows: list[dict[str, Any]] = []
     C2_rows: list[dict[str, Any]] = []
     C2_censored_rows: list[dict[str, Any]] = []
@@ -252,6 +254,24 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
                                                   "no_second_attempt_observed_in_historical_data",
                                                   False, N))
 
+        # Operational rolling B: emit a snapshot after attempt 1 and/or 2.
+        # Trainable only when the following attempt is observed; final-prefix rows
+        # are censored rather than incorrectly labelled negative. This is a
+        # conditional next-attempt target, not a probability-of-never-returning target.
+        for k in (1, 2):
+            if N >= k:
+                prefix = hist.iloc[:k]
+                if N > k:
+                    b_roll_target = int(D == 1 and N == k + 1)
+                    B_rolling_rows.append(add_row(
+                        "B_rolling_early", sid, k, prefix, b_roll_target, True,
+                        "next_attempt_observed_and_is_final_dropout_attempt" if b_roll_target else "next_attempt_observed_but_not_dropout_event",
+                        True, N, snapshot_index=k))
+                else:
+                    B_rolling_censored_rows.append(add_row(
+                        "B_rolling_early_censored", sid, k, prefix, np.nan, False,
+                        "no_next_attempt_observed_in_historical_data", False, N, snapshot_index=k))
+
         # C1: retrospective penultimate-only benchmark, one row for N>=4.
         if N >= 4:
             k = N - 1
@@ -298,6 +318,8 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     B = pd.DataFrame(B_rows)
     B_fixed = pd.DataFrame(B_fixed_rows)
     B_fixed_censored = pd.DataFrame(B_fixed_censored_rows)
+    B_rolling = pd.DataFrame(B_rolling_rows)
+    B_rolling_censored = pd.DataFrame(B_rolling_censored_rows)
     C1 = pd.DataFrame(C1_rows)
     C2 = pd.DataFrame(C2_rows)
     C2_censored = pd.DataFrame(C2_censored_rows)
@@ -319,7 +341,7 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
         ]
 
     # Ensure every expected feature exists even for empty datasets.
-    for df in [A, B, B_fixed, C1, C2, C2_censored]:
+    for df in [A, B, B_fixed, B_rolling, B_rolling_censored, C1, C2, C2_censored]:
         for col in feature_cols:
             if col not in df:
                 df[col] = np.nan
@@ -336,6 +358,8 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
         "B_retrospective_capped": B,
         "B_operational_after_attempt_1": B_fixed,
         "B_operational_censored_rows": B_fixed_censored,
+        "B_rolling_early": B_rolling,
+        "B_rolling_early_censored_rows": B_rolling_censored,
         "C1_penultimate_only": C1,
         "C2_rolling": C2,
         "C2_censored_rows": C2_censored,
@@ -344,7 +368,7 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     dataset_feature_cols = {}
     for name, df in datasets.items():
         df.to_csv(output_dir / f"{name}.csv", index=False)
-        if name not in {"C2_censored_rows", "B_operational_censored_rows"}:
+        if name not in {"C2_censored_rows", "B_operational_censored_rows", "B_rolling_early_censored_rows"}:
             # A is strictly student-level: no attempt/performance-derived columns,
             # not even constant zero/missing placeholders.
             model_features = STUDENT_FEATURES if name == "A" else feature_cols
@@ -363,6 +387,9 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
     assert len(B_fixed) == len(B)
     assert len(B_fixed_censored) == int((audit["eventual_attempt_count_audit_only"] == 1).sum())
     assert B_fixed_censored["target_observed"].eq(False).all() if len(B_fixed_censored) else True
+    assert len(B_rolling) == sum(int(n > 1) + int(n > 2) for n in total_count.values())
+    assert len(B_rolling_censored) == sum(int(n in (1, 2)) for n in total_count.values())
+    assert B_rolling_censored["target_observed"].eq(False).all() if len(B_rolling_censored) else True
     assert len(C1) == int((audit["eventual_attempt_count_audit_only"] >= 4).sum())
     expected_c2 = sum(max(0, n - 3) for n in total_count.values())
     assert len(C2) == expected_c2
@@ -393,17 +420,19 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
                         assert pd.isna(got), (mode, sid, col, got, exp)
                     else:
                         assert np.isclose(float(got), float(exp), equal_nan=True), (mode, sid, col, got, exp)
-            if mode in {"B_retrospective_capped", "B_operational_after_attempt_1", "C1_penultimate_only", "C2_rolling"}:
+            if mode in {"B_retrospective_capped", "B_operational_after_attempt_1", "B_rolling_early", "C1_penultimate_only", "C2_rolling"}:
                 assert k < len(hist), (mode, sid, k, len(hist))
                 # The next attempt's values are not used in any feature calculation;
                 # explicit target check verifies only metadata/label use it.
+                if mode == "B_rolling_early":
+                    assert k in (1, 2)
                 if mode == "C1_penultimate_only":
                     assert k == len(hist) - 1
                 if mode == "C2_rolling":
                     assert k < len(hist)
         return
 
-    for name in ["A", "B_retrospective_capped", "B_operational_after_attempt_1", "C1_penultimate_only", "C2_rolling"]:
+    for name in ["A", "B_retrospective_capped", "B_operational_after_attempt_1", "B_rolling_early", "C1_penultimate_only", "C2_rolling"]:
         check_prefix(datasets[name], name)
 
     # Stage-target truth checks.
@@ -416,6 +445,12 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
         N = int(row.eventual_attempt_count_audit)
         D = d_map[row.student_id]
         assert int(row.target) == int(D == 1 and N == 2)
+    for row in B_rolling.itertuples(index=False):
+        N = int(row.eventual_attempt_count_audit)
+        D = d_map[row.student_id]
+        k = int(row.prefix_length_audit)
+        assert k in (1, 2) and k < N
+        assert int(row.target) == int(D == 1 and N == k + 1)
     for row in C1.itertuples(index=False):
         D = d_map[row.student_id]
         assert int(row.target) == D
@@ -457,6 +492,8 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
             "B_retrospective_capped": "Project's proposed B history: N=2 uses k=1; N>=3 uses k=2. Retrospective comparison only; timing depends on eventual N.",
             "B_operational_after_attempt_1": "Operational comparator: after attempt 1; predicts whether attempt 2 is the final recorded attempt with positive dropout label.",
             "B_operational_censored_rows": "After-attempt-1 snapshots with no observed second attempt; target is blank and these rows are not trainable for the next-attempt target.",
+            "B_rolling_early": "Rolling operational B snapshots after k=1 and k=2 when a next attempt is observed; positive iff the next attempt is the final recorded attempt and dropout label is positive.",
+            "B_rolling_early_censored_rows": "Final observed snapshots at k=1 or k=2 without a subsequent attempt; target is blank, not negative.",
             "C1_penultimate_only": "One row for N>=4; prefix N-1; target is supplied eventual dropout label.",
             "C2_rolling": "Rows for every prefix k>=3 with an observed next attempt; positive only if that next attempt is final and dropout label is positive.",
             "C2_censored_rows": "Final observed prefixes with no next attempt in the historical data; target is blank and these rows are not trainable for next-attempt target.",
@@ -511,12 +548,13 @@ def build(data_dir: Path, output_dir: Path) -> dict[str, Any]:
         "- `dropped_out` and the normalized label are excluded from feature columns.",
         "- `refund_requested` is excluded from model features pending timing validation.",
         "- Score sentinel 999 is excluded from score aggregates; missing duration is not replaced by zero.",
-        "- C2 rows without a historical next attempt are exported separately with unobserved target.",
+        "- B rolling and C2 rows without a historical next attempt are exported separately with unobserved target.",
         "",
         "## Interpretation cautions",
         "",
         "- B_retrospective_capped is the requested retrospective design but its snapshot time depends on eventual attempt count; it is not a deployable routing rule as written.",
-        "- B_operational_after_attempt_1 is included as a strict operational comparator.",
+        "- B_operational_after_attempt_1 is included as a strict operational comparator; B_rolling_early adds k=1 and k=2 snapshots.",
+        "- B_rolling_early and C2 are conditional next-attempt models, not direct no-return/dropout-time models.",
         "- C1 is retrospective penultimate-only; C2 is rolling and operationally meaningful when each new attempt is observed.",
         "- These are dataset/label audits, not model-performance results.",
         "",
@@ -533,7 +571,7 @@ def main() -> None:
     manifest = build(args.data_dir, args.output_dir)
     print(json.dumps(manifest["dataset_summaries"], indent=2))
     print(f"Assertions passed. Outputs written to {args.output_dir}")
-    
+
 
 if __name__ == "__main__":
     main()
