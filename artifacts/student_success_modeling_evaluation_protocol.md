@@ -14,11 +14,13 @@ The current builder reports:
 | A: initial screening | 500 | 500 | 21 | 479 | 4.2% |
 | B: retrospective capped | 478 | 478 | 50 | 428 | 10.5% |
 | B: operational after attempt 1 | 478 | 478 | 24 | 454 | 5.0% |
+| B: rolling early (k=1,2) | 916 | 478 | 50 | 866 | 5.5% |
 | C1: penultimate-only | 374 | 374 | 54 | 320 | 14.4% |
 | C2: rolling | 1,038 | 374 | 54 | 984 | 5.2% |
 
 Censored rows:
 - B after attempt 1: 21 students have no recorded second attempt; their next-attempt target is unobserved.
+- B rolling early: 61 final prefixes at k=1 or k=2 have no subsequent recorded attempt; their next-attempt target is unobserved.
 - C2: 438 final observed prefixes have no subsequent recorded attempt; their next-attempt target is unobserved.
 
 The current attempt-count distribution is:
@@ -58,9 +60,11 @@ The current B datasets represent two different experiments:
 
 This operational B is conditional on an observed next attempt. At live inference, however, the model is called before we know whether the student will make another attempt. It therefore does not estimate the full risk of dropout/no-return by itself.
 
-### Recommendation
+### Rolling B has now been added
 
-Keep the current B variants for comparison, but do not claim either is the final operational B policy yet. Before training a cascade, add and compare a rolling B dataset with snapshots after prefixes `k = 1` and `k = 2`, using only rows where the next attempt is observed for the next-attempt target. Preserve no-next-attempt cases as censored. Separately report that this conditional model does not predict failure to return when no next attempt is observed.
+The builder now exports `B_rolling_early` with snapshots after prefixes `k = 1` and `k = 2` whenever a subsequent attempt is observed, plus `B_rolling_early_censored_rows` for final prefixes at those cutoffs with no subsequent attempt. The rolling dataset has 916 rows from 478 students (50 positives, 866 negatives); 61 final-prefix rows are censored. It includes 50 positives across the two cutoffs, not 50 distinct positive students guaranteed to be unique across snapshots.
+
+Keep all B variants for comparison, but do not claim any is the final operational B policy yet. The rolling model is conditional on a next attempt being observed; it does not predict failure to return when no next attempt is observed.
 
 If the product requirement is specifically to predict *whether a student will stop engaging before another attempt*, that needs a separately defined event target (or a survival/time-to-event formulation). Do not silently merge “no next attempt”, “next attempt is the final one”, and “eventual dropout” into one label.
 
@@ -86,7 +90,7 @@ Use a **student-level locked holdout plus grouped cross-validation on the develo
 5. Set decision thresholds from development out-of-fold predictions or a dedicated validation procedure, never from test outcomes.
 6. Freeze the pipeline and evaluate once on the locked test set.
 
-For A/B/C1, there is one row per student, so stratified student-level splitting is straightforward. For C2 (and rolling B if added), assign folds at the student level and then include all of each student's snapshots in that fold.
+For A/B/C1, there is one row per student, so stratified student-level splitting is straightforward. For B rolling and C2, assign folds at the student level and then include all of each student's snapshots in that fold.
 
 ### Important limitation for A
 
@@ -269,7 +273,7 @@ Do not change several dimensions at once in the early experiments; otherwise, im
 5. Use PR-AUC plus threshold-specific precision/recall and balanced accuracy.
 6. Compare C1 retrospective and C2 rolling separately.
 7. Keep B retrospective and operational B as distinct experiments.
-8. Add a rolling B comparison if the intended system should make decisions after both the first and second attempts.
+8. Compare B rolling (k=1,2) against the single-cutoff B comparator, keeping student groups intact across folds.
 9. Preserve censored rows; do not label a missing next attempt as a negative.
 10. Before claiming end-to-end cascade performance, finalise how the system handles students who do not make another attempt and how upstream stage predictions route them.
 
