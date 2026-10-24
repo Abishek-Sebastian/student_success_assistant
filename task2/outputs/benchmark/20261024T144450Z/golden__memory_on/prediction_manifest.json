@@ -1,0 +1,10 @@
+{
+  "dataset": "golden",
+  "memory_enabled": true,
+  "input_path": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/data/evaluation/golden_dataset.csv",
+  "prediction_path": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/outputs/benchmark/20261024T144450Z/golden__memory_on/predictions.csv",
+  "prediction_rows": 60,
+  "created_at_utc": "2026-10-24T15:44:09.200777+00:00",
+  "label_column_loaded_for_inference": false,
+  "memory_policy": "canonical development memory; POC provisional cases permitted"
+}

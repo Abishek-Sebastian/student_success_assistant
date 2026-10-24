@@ -1,0 +1,70 @@
+{
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "weighted_f1": 1.0,
+  "confusion_matrix_labels_order": [
+    "understood",
+    "partial",
+    "wrong"
+  ],
+  "confusion_matrix": [
+    [
+      20,
+      0,
+      0
+    ],
+    [
+      0,
+      20,
+      0
+    ],
+    [
+      0,
+      0,
+      20
+    ]
+  ],
+  "classification_report": {
+    "understood": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "partial": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "wrong": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 60.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 60.0
+    }
+  },
+  "dataset": "golden",
+  "memory_enabled": true,
+  "total_examples": 60,
+  "valid_predictions_scored": 60,
+  "invalid_or_failed_predictions": 0,
+  "invalid_prediction_rate": 0.0,
+  "mean_latency_seconds": 16.4633,
+  "mean_retrieved_cases": 2.0,
+  "predictions_path": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/outputs/benchmark/20261024T144450Z/golden__memory_on/predictions.csv",
+  "created_at_utc": "2026-10-24T15:44:09.570057+00:00"
+}

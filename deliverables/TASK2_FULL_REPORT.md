@@ -1,10 +1,70 @@
 # Task 2: Student Explanation Evaluation and Feedback
 
-## 1. Overview
+## 1. Result metrics
 
-Task 2 extends the Student Success Assistant by evaluating an individual student's written explanation of a lesson concept. Given a lesson identifier and an explanation, the system assesses the conceptual understanding demonstrated in the text and generates structured feedback to help the student improve.
+### Risk Dataset Evaluation (Memory Enabled)
 
-The system combines a lesson-specific rubric, a locally served large language model (LLM), structured-output validation, and an optional retrieval-augmented episodic memory of previous explanation cases. The objective is to provide lesson-grounded assessments while maintaining a clear separation between development examples and the held-out evaluation dataset.
+The evaluator was tested on **99 risk-dataset examples** with retrieval-augmented episodic memory enabled.
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 97.98% |
+| Macro F1-score | 97.63% |
+| Weighted F1-score | 97.99% |
+| Valid predictions scored | 99 / 99 |
+| Invalid or failed predictions | 0 |
+| Mean inference latency | 16.23 s/example |
+| Mean retrieved cases | 2.0 |
+
+**Class-wise performance**
+
+| Verdict | Precision | Recall | F1-score | Support |
+|---|---:|---:|---:|---:|
+| Understood | 1.000 | 1.000 | 1.000 | 42 |
+| Partial | 1.000 | 0.939 | 0.969 | 33 |
+| Wrong | 0.923 | 1.000 | 0.960 | 24 |
+
+**Confusion matrix** (rows: actual labels; columns: predicted labels, ordered as `understood`, `partial`, `wrong`):
+
+| Actual \ Predicted | Understood | Partial | Wrong |
+|---|---:|---:|---:|
+| Understood | 42 | 0 | 0 |
+| Partial | 0 | 31 | 2 |
+| Wrong | 0 | 0 | 24 |
+
+The evaluator correctly classified 97 of 99 examples. Both errors involved **actual `partial` explanations predicted as `wrong`**. No `understood` or `wrong` examples were misclassified.
+
+### Golden Dataset Evaluation (Memory Enabled)
+
+The evaluator was tested on **60 golden-dataset examples** with retrieval-augmented episodic memory enabled.
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 100.00% |
+| Macro F1-score | 100.00% |
+| Weighted F1-score | 100.00% |
+| Valid predictions scored | 60 / 60 |
+| Invalid or failed predictions | 0 |
+| Mean inference latency | 16.46 s/example |
+| Mean retrieved cases | 2.0 |
+
+**Class-wise performance**
+
+| Verdict | Precision | Recall | F1-score | Support |
+|---|---:|---:|---:|---:|
+| Understood | 1.000 | 1.000 | 1.000 | 20 |
+| Partial | 1.000 | 1.000 | 1.000 | 20 |
+| Wrong | 1.000 | 1.000 | 1.000 | 20 |
+
+**Confusion matrix** (rows: actual labels; columns: predicted labels, ordered as `understood`, `partial`, `wrong`):
+
+| Actual \ Predicted | Understood | Partial | Wrong |
+|---|---:|---:|---:|
+| Understood | 20 | 0 | 0 |
+| Partial | 0 | 20 | 0 |
+| Wrong | 0 | 0 | 20 |
+
+The evaluator correctly classified all 60 examples, achieving perfect precision, recall, and F1-score across all three verdict classes. No invalid or failed predictions were recorded.
 
 ## 2. Problem Statement
 
