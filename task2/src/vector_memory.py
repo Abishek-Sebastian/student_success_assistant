@@ -20,13 +20,17 @@ ALLOWED_LABEL_SOURCES = {
     "manual_review",
     "larger_llm_then_human_verified",
     "poc_assumed_provisional",
+    "independently_verified",
+    "human_verified",
+    "provided_existing_label",
 }
 ALLOWED_APPROVAL_STATUSES = {"approved", "approved_for_poc"}
+TRUSTED_APPROVAL_STATUSES = {"approved"}
 VALID_VERDICTS = {"understood", "partial", "wrong"}
 
 
 def _load_approved_records() -> list[dict[str, Any]]:
-    """Load only independently verified development cases."""
+    """Load approved development cases, including explicitly POC-approved records."""
     if not MEMORY_PATH.exists():
         return []
 
@@ -149,6 +153,8 @@ def rebuild_index() -> int:
                 "lesson_id": str(r["lesson_id"]),
                 "final_verdict": str(r.get("correct_verdict", r.get("final_verdict", r.get("verified_verdict", "")))).lower(),
                 "review_status": str(r["approval_status"]),
+                "label_status": str(r.get("label_status", "unknown")),
+                "ground_truth_available": str(bool(r.get("ground_truth_available", False))).lower(),
                 "source_split": str(r["split"]),
                 "source_dataset": str(r.get("source_dataset", "independent")),
                 "memory_version": str(r.get("memory_version", "1")),
@@ -199,13 +205,15 @@ def retrieve_vector_cases(
     )[0]
 
     # Oversample because we may exclude the current case or exact duplicates.
+    # POC memory built from accepted candidate labels is retrievable by default.
+    statuses = ["approved", "approved_for_poc"]
     result = collection.query(
         query_embeddings=[query_embedding.tolist()],
         n_results=min(collection.count(), max(k * 4, k)),
         where={
             "$and": [
                 {"lesson_id": str(lesson_id)},
-                {"review_status": "approved"},
+                {"review_status": {"$in": statuses}},
                 {"source_split": "development"},
             ]
         },
@@ -233,6 +241,8 @@ def retrieve_vector_cases(
             "final_verdict": metadata["final_verdict"],
             "correct_verdict": metadata["final_verdict"],
             "approval_status": metadata["review_status"],
+            "label_status": metadata.get("label_status", "unknown"),
+            "ground_truth_available": metadata.get("ground_truth_available", "false") == "true",
             "label_source": metadata["label_source"],
             "case_type": metadata.get("case_type", "learning_case"),
             "predicted_verdict": metadata.get("predicted_verdict", ""),

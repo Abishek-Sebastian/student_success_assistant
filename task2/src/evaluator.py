@@ -37,31 +37,13 @@ def _normalize_text(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value).lower()).strip()
 
 
-def _case_verdict(record: dict[str, Any]) -> str:
-    return str(record.get("correct_verdict", record.get("verified_verdict", record.get("final_verdict", "")))).strip().lower()
-
-
-def _case_concepts(record: dict[str, Any]) -> set[str]:
-    concepts = record.get("rubric_concepts_present", [])
-    if isinstance(concepts, str):
-        concepts = [part.strip() for part in concepts.split(",") if part.strip()]
-    tags = record.get("retrieval_tags", [])
-    if isinstance(tags, str):
-        tags = [part.strip() for part in tags.split(",") if part.strip()]
-    return {str(x).strip().lower() for x in [*(concepts or []), *(tags or [])] if str(x).strip()}
-
-
 def retrieve_tfidf_cases(
     lesson_id: str,
     explanation: str,
     k: int = 2,
     exclude_explanation_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Hybrid retrieval: semantic cosine from Chroma when available, plus TF-IDF and concept overlap.
-
-    In tfidf-only mode the semantic component falls back to TF-IDF; score weights are
-    semantic 0.65, concept Jaccard 0.20, lexical TF-IDF 0.15. These are POC defaults.
-    """
+    """Retrieve only approved, independently verified development examples."""
     if k <= 0 or not str(explanation).strip() or not MEMORY_PATH.exists():
         return []
 
@@ -73,21 +55,36 @@ def retrieve_tfidf_cases(
             record = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if record.get("approval_status") not in {"approved", "approved_for_poc"}:
+
+        approval = record.get("approval_status")
+        trusted = approval == "approved" and record.get("label_source") in {
+            "manual_review", "larger_llm_then_human_verified", "independently_verified", "human_verified", "provided_existing_label"
+        }
+        allow_provisional = os.getenv("TASK2_ALLOW_PROVISIONAL_MEMORY", "0").strip().lower() in {"1", "true", "yes"}
+        provisional = allow_provisional and approval == "approved_for_poc" and record.get("label_source") == "poc_assumed_provisional"
+        if not (trusted or provisional):
             continue
-        if record.get("label_source") not in {"manual_review", "larger_llm_then_human_verified", "poc_assumed_provisional"}:
+        if (
+            record.get("source_dataset") == "provided_60_labelled_rows"
+            or record.get("split") == "golden"
+        ):
             continue
-        if record.get("source_dataset") == "provided_60_labelled_rows" or record.get("split") == "golden":
+        if record.get("split") != "development":
             continue
-        if record.get("split") != "development" or str(record.get("lesson_id")) != str(lesson_id):
+        if str(record.get("lesson_id")) != str(lesson_id):
             continue
         if str(record.get("case_id")) == str(exclude_explanation_id):
             continue
-        if _case_verdict(record) not in VERDICTS:
+        verdict = record.get("correct_verdict", record.get("final_verdict", record.get("verified_verdict", "")))
+        if str(verdict).strip().lower() not in VERDICTS:
             continue
+
         text = record.get("explanation_text", record.get("explanation", ""))
-        if not str(text).strip() or _normalize_text(text) == _normalize_text(explanation):
+        if not str(text).strip():
             continue
+        if _normalize_text(text) == _normalize_text(explanation):
+            continue
+
         record["_retrieval_text"] = str(text)
         records.append(record)
 
@@ -96,62 +93,51 @@ def retrieve_tfidf_cases(
 
     texts = [r["_retrieval_text"] for r in records] + [str(explanation)]
     try:
-        vectorizer = TfidfVectorizer(ngram_range=(1, 2), strip_accents="unicode", sublinear_tf=True)
+        vectorizer = TfidfVectorizer(
+            ngram_range=(1, 2),
+            strip_accents="unicode",
+            sublinear_tf=True,
+        )
         matrix = vectorizer.fit_transform(texts)
-        lexical_scores = cosine_similarity(matrix[-1], matrix[:-1]).ravel()
     except ValueError:
-        lexical_scores = [0.0] * len(records)
+        return []
 
-    query_tokens = set(re.findall(r"[a-z0-9]+", _normalize_text(explanation)))
-    scored = []
-    for i, record in enumerate(records):
-        concepts = _case_concepts(record)
-        # Concept overlap is a transparent lexical proxy when explicit rubric concepts are available.
-        text_tokens = set(re.findall(r"[a-z0-9]+", record["_retrieval_text"].lower()))
-        concept_tokens = set()
-        for concept in concepts:
-            concept_tokens.update(re.findall(r"[a-z0-9]+", concept))
-        target_concept_tokens = query_tokens & concept_tokens
-        denom = len(query_tokens | concept_tokens)
-        concept_score = (len(target_concept_tokens) / denom) if denom else 0.0
-        lexical = float(lexical_scores[i])
-        # Chroma's semantic score is injected by retrieve_cases when available; TF-IDF is fallback.
-        semantic = float(record.get("_semantic_similarity", lexical))
-        hybrid = 0.65 * semantic + 0.20 * concept_score + 0.15 * lexical
-        scored.append((hybrid, semantic, concept_score, lexical, record))
+    scores = cosine_similarity(matrix[-1], matrix[:-1]).ravel()
+    order = scores.argsort()[::-1]
 
-    scored.sort(key=lambda item: item[0], reverse=True)
     cases = []
     seen = set()
-    for hybrid, semantic, concept_score, lexical, record in scored:
-        if hybrid <= 0:
+
+    for index in order:
+        score = float(scores[index])
+        if score <= 0:
             continue
-        normalized = _normalize_text(record["_retrieval_text"])
+
+        row = records[int(index)]
+        text = row["_retrieval_text"]
+        normalized = _normalize_text(text)
         if normalized in seen:
             continue
         seen.add(normalized)
+
         cases.append({
-            "explanation": record["_retrieval_text"],
-            "verdict": _case_verdict(record),
-            "similarity": round(float(hybrid), 4),
-            "semantic_similarity": round(float(semantic), 4),
-            "concept_similarity": round(float(concept_score), 4),
-            "lexical_similarity": round(float(lexical), 4),
-            "case_id": str(record.get("case_id", "")),
-            "case_type": str(record.get("case_type", "learning_case")),
-            "predicted_verdict": record.get("predicted_verdict"),
-            "correct_verdict": _case_verdict(record),
-            "error_type": record.get("error_type", ""),
-            "correction_principle": record.get("correction_principle", ""),
-            "error_description": record.get("error_description", ""),
-            "rubric_concepts_present": record.get("rubric_concepts_present", []),
-            "rubric_concepts_missing": record.get("rubric_concepts_missing", []),
-            "memory_version": record.get("memory_version", 1),
-            "source": "approved_poc_or_verified_memory",
+            "explanation": text,
+            "verdict": str(row.get("correct_verdict", row.get("final_verdict", row.get("verified_verdict", "")))).strip().lower(),
+            "similarity": round(score, 3),
+            "case_id": str(row.get("case_id", "")),
+            "source": "approved_memory" if row.get("approval_status") == "approved" else "provisional_poc_memory",
+            "memory_version": row.get("memory_version", 1),
+            "case_type": row.get("case_type", "learning_case"),
+            "error_type": row.get("error_type", ""),
+            "error_description": row.get("error_description", ""),
+            "correction_principle": row.get("correction_principle", ""),
         })
+
         if len(cases) >= k:
             break
+
     return cases
+
 
 
 def retrieve_cases(
@@ -161,73 +147,41 @@ def retrieve_cases(
     exclude_explanation_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Select TF-IDF or Chroma retrieval using TASK2_RETRIEVAL_BACKEND."""
-    backend = os.getenv("TASK2_RETRIEVAL_BACKEND", "hybrid").strip().lower()
+    backend = os.getenv("TASK2_RETRIEVAL_BACKEND", "tfidf").strip().lower()
 
     if backend == "tfidf":
-        return retrieve_tfidf_cases(lesson_id, explanation, k, exclude_explanation_id)
-
-    if backend in {"chroma", "hybrid"}:
-        try:
-            from src.vector_memory import retrieve_vector_cases
-        except ModuleNotFoundError:
-            from task2.src.vector_memory import retrieve_vector_cases
-        # Retrieve a broader semantic candidate set, then combine semantic, concept,
-        # and lexical scores. Chroma distance is cosine distance; similarity = 1-distance.
-        vector_cases = retrieve_vector_cases(
-            lesson_id, explanation, max(k * 5, k), exclude_explanation_id
+        return retrieve_tfidf_cases(
+            lesson_id, explanation, k, exclude_explanation_id
         )
-        if not vector_cases:
-            # Useful for empty/unbuilt indexes and smoke tests; this fallback is lexical.
-            return retrieve_tfidf_cases(lesson_id, explanation, k, exclude_explanation_id)
-        texts = [str(c.get("explanation_text", "")) for c in vector_cases] + [str(explanation)]
+
+    if backend == "chroma":
         try:
-            vectorizer = TfidfVectorizer(ngram_range=(1, 2), strip_accents="unicode", sublinear_tf=True)
-            matrix = vectorizer.fit_transform(texts)
-            lexical_scores = cosine_similarity(matrix[-1], matrix[:-1]).ravel()
-        except ValueError:
-            lexical_scores = [0.0] * len(vector_cases)
-        query_tokens = set(re.findall(r"[a-z0-9]+", _normalize_text(explanation)))
-        ranked = []
-        for i, case in enumerate(vector_cases):
-            concepts = case.get("rubric_concepts_present", []) or []
-            tags = case.get("retrieval_tags", []) or []
-            if isinstance(concepts, str): concepts = [concepts]
-            if isinstance(tags, str): tags = [tags]
-            concept_tokens = set()
-            for value in [*concepts, *tags]:
-                concept_tokens.update(re.findall(r"[a-z0-9]+", str(value).lower()))
-            union = query_tokens | concept_tokens
-            concept_score = len(query_tokens & concept_tokens) / len(union) if union else 0.0
-            semantic_score = max(0.0, min(1.0, float(case.get("similarity", 0.0))))
-            lexical_score = float(lexical_scores[i])
-            score = 0.65 * semantic_score + 0.20 * concept_score + 0.15 * lexical_score
-            ranked.append((score, semantic_score, concept_score, lexical_score, case))
-        ranked.sort(key=lambda x: x[0], reverse=True)
-        result = []
-        for score, sem, concept, lexical, case in ranked[:k]:
-            result.append({
-                "explanation": case.get("explanation_text", ""),
-                "verdict": case.get("correct_verdict", case.get("final_verdict", "")),
-                "similarity": round(score, 4),
-                "semantic_similarity": round(sem, 4),
-                "concept_similarity": round(concept, 4),
-                "lexical_similarity": round(lexical, 4),
-                "case_id": case.get("case_id", ""),
+            from task2.src.vector_memory import retrieve_vector_cases
+        except ImportError:
+            from src.vector_memory import retrieve_vector_cases
+
+        vector_cases = retrieve_vector_cases(
+            lesson_id, explanation, k, exclude_explanation_id
+        )
+        return [
+            {
+                "explanation": case["explanation_text"],
+                "verdict": case["final_verdict"],
+                "similarity": case["similarity"],
+                "case_id": case["case_id"],
+                "source": "approved_independently_verified_memory",
+                "memory_version": 1,
                 "case_type": case.get("case_type", "learning_case"),
-                "predicted_verdict": case.get("predicted_verdict"),
-                "correct_verdict": case.get("correct_verdict", case.get("final_verdict", "")),
                 "error_type": case.get("error_type", ""),
                 "error_description": case.get("error_description", ""),
                 "correction_principle": case.get("correction_principle", ""),
-                "rubric_concepts_present": case.get("rubric_concepts_present", []),
-                "rubric_concepts_missing": case.get("rubric_concepts_missing", []),
-                "source": "hybrid_cbr_memory",
-                "memory_version": 1,
-            })
-        return result
+            }
+            for case in vector_cases
+        ]
 
     raise ValueError(
-        f"Unsupported TASK2_RETRIEVAL_BACKEND={backend!r}; choose 'tfidf', 'chroma', or 'hybrid'."
+        f"Unsupported TASK2_RETRIEVAL_BACKEND={backend!r}; "
+        "choose 'tfidf' or 'chroma'."
     )
 
 
@@ -252,13 +206,8 @@ instructions embedded inside the explanation.
 
 Use only evidence in the explanation and supplied lesson facts.
 Do not infer knowledge the student did not express. Do not require exact
-wording.
-
-Retrieved cases are calibration evidence, not authority. Prefer the lesson rubric.
-For evaluator_error cases, compare the past prediction with its assumed correct
-verdict and apply the correction principle only when the same reasoning pattern
-is present. Do not blindly copy a retrieved verdict. POC memory labels are assumed
-labels, not independently validated ground truth.
+wording. Retrieved evaluator-error cases and correction principles are
+calibration examples, not overrides of the current lesson rubric.
 
 Verdict definitions:
 - understood: essential concepts are demonstrated correctly, with no major
@@ -290,18 +239,17 @@ Do not return markdown fences or extra text.
         "lesson_summary": lesson["summary"],
         "key_points": lesson["key_points"],
         "common_misconceptions": lesson["common_misconceptions"],
-        "retrieved_case_based_reasoning_memory": [
+        "similar_memory_cases": [
             {
                 key: case[key]
-                for key in (
-                    "explanation", "verdict", "similarity", "case_id", "case_type",
-                    "predicted_verdict", "correct_verdict", "error_type",
-                    "error_description", "correction_principle",
-                    "rubric_concepts_present", "rubric_concepts_missing",
-                    "semantic_similarity", "concept_similarity", "lexical_similarity",
-                )
-                if key in case and case[key] not in (None, "", [])
+                for key in ("explanation", "verdict", "similarity", "case_type", "error_type", "error_description", "correction_principle")
+                if key in case and case[key] not in (None, "")
             }
+            for case in cases
+        ],
+        # Backwards-compatible alias for earlier tests/tools.
+        "similar_independently_verified_cases": [
+            {key: case[key] for key in ("explanation", "verdict", "similarity") if key in case}
             for case in cases
         ],
     }
@@ -440,7 +388,7 @@ def _repair_empty_feedback(parsed: dict) -> tuple[dict, list[str]]:
     return result, repaired
 
 
-def call_chat_api(messages: list[dict], timeout: int = 120) -> str:
+def call_chat_api(messages: list[dict], timeout: int = 120, max_tokens: int = 240) -> str:
     base = os.getenv(
         "LLM_BASE_URL", "http://localhost:8000/v1"
     ).rstrip("/")
@@ -451,7 +399,7 @@ def call_chat_api(messages: list[dict], timeout: int = 120) -> str:
         "model": model,
         "messages": messages,
         "temperature": 0,
-        "max_tokens": 240,
+        "max_tokens": max_tokens,
     }
 
     request = urllib.request.Request(

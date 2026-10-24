@@ -1,0 +1,30 @@
+{
+  "source_file": "/Users/abishek/Documents/Projects/student_success_assistant_new/data/task2/explanations_labelled_full.csv",
+  "predictions_file": "/Users/abishek/Documents/Projects/student_success_assistant_new/outputs/final_cascade_evaluation/outer_test_student_predictions.csv",
+  "risk_rule": "flag_end_to_end == 1",
+  "risk_definition": "A student is at risk if any prediction row has flag_end_to_end == 1.",
+  "source_rows": 724,
+  "source_unique_students": 426,
+  "golden_rows": 60,
+  "provisional_rows_before_split": 664,
+  "prediction_rows": 300,
+  "prediction_unique_students": 250,
+  "prediction_rows_flagged_at_risk": 139,
+  "unique_at_risk_students": 123,
+  "at_risk_students_matched_to_source": 101,
+  "risk_rows_before_validation": 151,
+  "risk_rows_after_validation_and_dedup": 99,
+  "risk_duplicates_removed": 52,
+  "nonrisk_rows_before_validation": 513,
+  "nonrisk_rows_after_validation_and_dedup": 179,
+  "nonrisk_duplicates_removed": 334,
+  "risk_output_unique_students": 75,
+  "nonrisk_output_unique_students": 149,
+  "at_risk_rows_in_nonrisk_output": 0,
+  "golden_used_for_memory": false,
+  "outputs": {
+    "golden": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/data/evaluation/golden_dataset.csv",
+    "risk": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/data/evaluation/risk_dataset.csv",
+    "nonrisk": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/data/development/nonrisk_dataset.csv"
+  }
+}

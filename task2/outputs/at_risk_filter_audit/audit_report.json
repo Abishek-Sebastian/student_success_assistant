@@ -1,0 +1,20 @@
+{
+  "source_file": "/Users/abishek/Documents/Projects/student_success_assistant_new/data/task2/explanations_labelled_non_golden.csv",
+  "candidate_file": "task2/memory/candidates/memory_candidates_nonrisk_only.csv",
+  "risk_file": "/Users/abishek/Documents/Projects/student_success_assistant_new/data/task2/outer_test_student_predictions.csv",
+  "source_conversation_rows": 664,
+  "candidate_conversation_rows": 160,
+  "source_unique_students": 416,
+  "candidate_unique_students": 102,
+  "source_students_missing_from_candidate_pool": 314,
+  "source_conversation_rows_retained_by_student_membership": 160,
+  "source_conversation_rows_removed_by_student_membership": 504,
+  "risk_file_rows_after_flag_filter": 300,
+  "unique_at_risk_students_in_risk_file": 250,
+  "at_risk_students_also_in_source": 200,
+  "at_risk_students_retained_in_candidates_unexpected": 102,
+  "at_risk_students_removed_from_candidates": 98,
+  "nonrisk_students_removed_from_candidates_unexpected": 216,
+  "risk_students_not_found_in_source": 50,
+  "note": "Membership is student-level: if a student has any row in the candidate file, all their source rows are counted as retained for the student-membership comparison. Inspect source_row_audit.csv for row-level status. Candidate rows may be a deduplicated subset, so conversation counts can differ from student membership counts."
+}

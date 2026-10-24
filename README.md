@@ -198,6 +198,70 @@ Review failures, invalid outputs, feedback quality, and per-class errors alongsi
 - Preserve original labels; document any independently verified corrections.
 - Do not report iteratively tuned golden-set scores as an untouched test result.
 
+## Task 2 Automated Case Memory Update
+
+This bundle updates three project files:
+
+- `task2/pipeline/add_memory.py`
+- `task2/src/evaluator.py`
+- `task2/src/vector_memory.py`
+
+### Behavior
+
+1. Selects candidate explanations using semantic, lexical, rubric-concept and coverage proxies. SentenceTransformer cosine similarity is used for semantic similarity when available; TF-IDF is the documented fallback.
+2. Selects diverse candidates while favoring lesson coverage.
+3. Automatically adds selected candidates whose evaluator verdict agrees with a provisional candidate label as `learning_case` records with `approval_status=approved_for_poc`, `label_source=poc_assumed_provisional`, and explicit provisional provenance. These are pseudo-labelled examples, not ground truth.
+4. Automatically adds verified matches as `learning_case` records when source and label status indicate trusted ground truth.
+5. Calls the configured API LLM to produce `error_type`, `error_description`, `correction_principle`, and `supporting_evidence` only when a trusted ground-truth label disagrees with the evaluator. If the label is provisional, a disagreement is not called an evaluator error and is not auto-added to canonical memory.
+6. Never promotes golden-set examples. Chroma rebuilding is optional and explicitly requested.
+7. Provisional POC records are excluded from evaluator retrieval by default. Set `TASK2_ALLOW_PROVISIONAL_MEMORY=1` only for development experiments that intentionally use pseudo-labelled cases. Keep it unset for final evaluation.
+
+### Install
+
+From the project root, extract the zip and copy the three files to their matching paths, replacing the current versions after backing them up.
+
+### Recommended first run
+
+A five-row smoke test will auto-add matching provisional examples to canonical memory, but will not create an evaluator-error case from an unverified disagreement:
+
+```bash
+python task2/pipeline/add_memory.py --limit 5 --max-selected 3
+```
+
+To also rebuild the Chroma index after adding cases (requires `chromadb` and `sentence-transformers`):
+
+```bash
+python task2/pipeline/add_memory.py --limit 5 --max-selected 3 --rebuild-chroma
+```
+
+To prevent provisional cases from being added:
+
+```bash
+python task2/pipeline/add_memory.py --limit 5 --max-selected 3 --no-provisional-learning-cases
+```
+
+For a memory-assisted POC run using provisional cases with the TF-IDF backend:
+
+```bash
+export TASK2_ALLOW_PROVISIONAL_MEMORY=1
+export TASK2_RETRIEVAL_BACKEND=tfidf
+python task2/pipeline/add_memory.py --limit 5 --max-selected 3
+```
+
+The API configuration remains controlled by `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY`; do not hard-code credentials.
+
+### Outputs
+
+- `task2/outputs/memory_pipeline/candidate_evaluations.csv`
+- `task2/outputs/memory_pipeline/proposed_memory_cases.jsonl`
+- `task2/outputs/memory_pipeline/memory_pipeline_report.json`
+- Canonical records appended to `task2/memory/approved_cases.jsonl` only under the promotion rules above.
+
+### Important interpretation
+
+A match to a provisional label is a pseudo-label agreement signal, not independent verification. `approved_for_poc` records should not be used in final benchmark evaluation unless the experiment explicitly calls for provisional-memory ablation. Error-correction records require trusted reference labels.
+
+
 ## Outputs, documentation, and archive
 
 - `outputs/` contains Task 1 experiment metrics, predictions, and reports.
