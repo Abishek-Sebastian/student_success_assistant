@@ -4,7 +4,7 @@ This module grades explanations against `knowledge/lesson_rubric.json` and retur
 
 ## Golden dataset and leakage boundary
 
-The 60 labelled rows supplied in `data/explanations.csv` are **all** the golden evaluation dataset. `scripts/task2/task2_prepare_split.py` writes all 60 inputs to `data/evaluation/golden_inputs.csv` and their labels separately to `golden_labels.csv`. The evaluator does not send labels to the model and joins them only after all predictions are saved.
+The 60 labelled rows supplied in `data/explanations.csv` (repository root) are **all** the golden evaluation dataset. `scripts/task2/task2_prepare_split.py` writes all 60 inputs to `task2/data/evaluation/golden_inputs.csv` and their labels separately to `task2/data/evaluation/golden_labels.csv`. The evaluator does not send labels to the model and joins them only after all predictions are saved.
 
 None of the 60 rows, labels, duplicates, or derived cases may be used as episodic memory. The default `memory/approved_cases.jsonl` is empty, so grading is zero-shot with respect to examples and uses only the lesson rubric. Independently verified examples from outside the 60 rows may be added to memory in a later version, with provenance and explicit approval.
 
@@ -19,7 +19,7 @@ The supplied labels are evaluation references, not guaranteed infallible truth. 
 - **Procedural:** prompt, TF-IDF/cosine retrieval code (used only if approved external memory exists), schema validation, retry and feedback-repair policy.
 - **Working:** current request only; not persisted.
 
-No model-generated case is automatically retained. See `memory/README.md` and `memory/case_memory_manifest.json`.
+No model-generated case is automatically retained. See `docs/TASK2_MEMORY_POLICY.md` and `memory/case_memory_manifest.json`.
 
 ## Configure and run
 

@@ -5,7 +5,7 @@ No existing files were modified, deleted, or archived.
 
 ## New files
 
-- `scripts/09_run_final_cascade_evaluation.py`
+- `scripts/task1/09_run_final_cascade_evaluation.py`
   - Trains the selected fixed A/B/C configuration, chooses stage thresholds using grouped development OOF scores, and reports stagewise plus cumulative end-to-end metrics.
 - `outputs/final_cascade_evaluation/stepwise_test_metrics.csv`
   - Per outer split: standalone A/B/C and cumulative A, A+B, A+B+C metrics.
@@ -35,7 +35,7 @@ Thresholds are selected from grouped development OOF scores, not from held-out t
 From the project root:
 
 ```bash
-python scripts/09_run_final_cascade_evaluation.py \
+python scripts/task1/09_run_final_cascade_evaluation.py \
   --outer-seeds 17 42 73 \
   --inner-folds 2 \
   --precision-floor 0.4 \

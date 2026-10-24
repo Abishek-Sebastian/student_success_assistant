@@ -8,7 +8,7 @@ This patch is intended to be copied into the existing repository root, preservin
 - `scripts/task2/task2_evaluate.py`: development default, golden-evaluation confirmation gate, input/label hash checks, predictions written before golden labels are read, failure/repair metrics.
 - `scripts/task2/task2_prepare_memory.py`: builds versioned episodic memory from development human-labelled rows only.
 - `task2/memory/approved_cases.jsonl` and `case_memory_manifest.json`: current approved development case memory and provenance hashes.
-- `task2/memory/README.md`, `task2/README.md`: documented CBR policy and golden-set procedure.
+- `docs/TASK2_MEMORY_POLICY.md`, `docs/TASK2_GUIDE.md`: documented CBR policy and golden-set procedure.
 - `tests/test_task2.py`: JSON robustness, ID override, memory isolation, retrieval, and split tests.
 
 ## Apply

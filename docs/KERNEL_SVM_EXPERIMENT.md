@@ -109,7 +109,7 @@ The RBF kernel tests flexible similarity-based nonlinear boundaries. A degree-2 
 From the project root:
 
 ```bash
-python scripts/05_run_kernel_svm_benchmark.py \
+python scripts/task1/07_run_kernel_svm_benchmark.py \
   --outer-seeds 17 42 73 \
   --inner-folds 2 \
   --precision-floors 0.4 \

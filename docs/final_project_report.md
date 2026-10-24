@@ -261,7 +261,7 @@ Do not compare raw precision/recall from these target definitions as if they mea
 Run from the project root with Python 3.10+ and dependencies in `requirements.txt`:
 
 ```bash
-python scripts/05_run_xgboost_oversampling_tuning.py \
+python scripts/task1/05_run_xgboost_oversampling_tuning.py \
   --outer-seeds 17 42 73 \
   --inner-folds 2 \
   --precision-floors 0.30 0.40 0.50 \
@@ -272,7 +272,7 @@ python scripts/05_run_xgboost_oversampling_tuning.py \
 The focused ratio sweep uses the same seeds and fixes B/C to the preferred compact + per-lesson feature family:
 
 ```bash
-python scripts/06_run_xgboost_sampling_ratio_tuning.py \
+python scripts/task1/06_run_xgboost_sampling_ratio_tuning.py \
   --outer-seeds 17 42 73 \
   --inner-folds 2 \
   --precision-floors 0.30 0.40 0.50 \

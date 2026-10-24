@@ -4,7 +4,7 @@ This is an additive Stage C experiment. It does not replace or delete existing s
 
 ## Added files
 
-- `scripts/08_run_poly3_kernel_ensemble_benchmark.py` — runnable benchmark script. Reuses the feature-preparation and Stage C snapshot-loading logic from `scripts/07_run_kernel_svm_benchmark.py`.
+- `scripts/task1/08_run_poly3_kernel_ensemble_benchmark.py` — runnable benchmark script. Reuses the feature-preparation and Stage C snapshot-loading logic from `scripts/task1/07_run_kernel_svm_benchmark.py`.
 - `outputs/poly3_kernel_ensemble/POLY3_KERNEL_ENSEMBLE_REPORT.md` — run report and interpretation.
 - `outputs/poly3_kernel_ensemble/stage_c_poly3_ensemble_oof_ap.csv` — development out-of-fold AP per model and split.
 - `outputs/poly3_kernel_ensemble/stage_c_poly3_ensemble_summary.csv` — aggregate development and held-out metrics.
@@ -20,7 +20,7 @@ This is an additive Stage C experiment. It does not replace or delete existing s
 From the repository root:
 
 ```bash
-python scripts/08_run_poly3_kernel_ensemble_benchmark.py --outer-seeds 17 42 73 --inner-folds 2 --precision-floor 0.4
+python scripts/task1/08_run_poly3_kernel_ensemble_benchmark.py --outer-seeds 17 42 73 --inner-folds 2 --precision-floor 0.4
 ```
 
 Optional runtime controls include `--bagging-estimators`, `--adaboost-estimators`, and `--threshold-quantiles`.

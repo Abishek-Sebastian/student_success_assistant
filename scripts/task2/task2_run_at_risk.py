@@ -2,7 +2,7 @@
 """Evaluate unlabeled explanations belonging to Task 1 flagged at-risk students.
 
 Example:
-  python scripts/task2_run_at_risk.py \
+  python scripts/task2/task2_run_at_risk.py \
     --prediction-file outputs/eventual_dropout_aligned/test_predictions_precision_50.csv \
     --limit 5
 
