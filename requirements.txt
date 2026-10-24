@@ -8,3 +8,6 @@ streamlit
 python-dotenv
 xgboost
 tabulate
+pytest
+chromadb==1.3.5
+sentence-transformers==5.1.2

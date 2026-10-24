@@ -13,4 +13,6 @@ __pycache__/
 .DS_Store
 **/.DS_Store
 
+tree.txt
+
 # Keep experiment outputs versionable unless a specific artifact is intentionally excluded.

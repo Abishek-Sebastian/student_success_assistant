@@ -1,77 +1,255 @@
 #!/usr/bin/env python3
-"""Run Task 2 predictions, then score against the locked human-labelled golden set."""
+"""Evaluate Task 2 against the labelled benchmark.
+
+Predictions are generated and saved before the golden labels are loaded.
+Previously inspected benchmark results must be reported as iterative tracking,
+not as an untouched final-test estimate.
+"""
+
+import argparse
+import json
+import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
-import argparse, hashlib, json, os, sys, time
+
 import pandas as pd
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'task2'))
-from src.evaluator import load_knowledge, evaluate_one, VALID_STATUSES
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+)
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from task2.src.evaluator import evaluate_one, load_knowledge, VALID_STATUSES  # noqa: E402
+
+TASK2_DIR = ROOT / "task2"
+EVAL_DIR = TASK2_DIR / "data" / "evaluation"
+OUTPUT_DIR = TASK2_DIR / "outputs" / "benchmark"
+INPUTS_PATH = EVAL_DIR / "golden_inputs.csv"
+LABELS_PATH = EVAL_DIR / "golden_labels.csv"
+MANIFEST_PATH = EVAL_DIR / "golden_manifest.json"
+
+CLASSES = ["understood", "partial", "wrong"]
 
 
 def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument('--split',choices=['golden'],default='golden', help='All 60 supplied labelled rows are the golden evaluation set')
-    ap.add_argument('--limit',type=int,default=None,help='Smoke-test only; do not use limited runs as final metrics')
-    ap.add_argument('--output-dir',default=None)
-    ap.add_argument('--confirm-final-evaluation',action='store_true',help='Required to run the locked golden evaluation')
-    ap.add_argument('--overwrite-final',action='store_true',help='Allow replacing existing golden prediction artifacts; avoid unless explicitly necessary')
-    args=ap.parse_args()
-    if not args.confirm_final_evaluation:
-        ap.error('This command scores the 60-row labelled benchmark. Add --confirm-final-evaluation to acknowledge that repeated runs are iterative benchmark tracking, not an untouched test estimate.')
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--confirm-final-evaluation",
+        action="store_true",
+        help="Confirm that you understand this is an iterative benchmark "
+             "if results have previously been inspected.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional small smoke test; do not use its metrics as benchmark results.",
+    )
+    args = parser.parse_args()
+
+    if not INPUTS_PATH.exists():
+        raise FileNotFoundError(f"Missing benchmark inputs: {INPUTS_PATH}")
+    if not MANIFEST_PATH.exists():
+        raise FileNotFoundError(f"Missing benchmark manifest: {MANIFEST_PATH}")
+
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    inputs = pd.read_csv(INPUTS_PATH).fillna("")
     if args.limit is not None:
-        ap.error('Do not use --limit for final golden evaluation.')
-    inputs=ROOT/'task2/data/evaluation/golden_inputs.csv'
-    labels=ROOT/'task2/data/evaluation/golden_labels.csv'
-    manifest_path=ROOT/'task2/data/split_manifest.json'
-    manifest=json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {}
-    actual_input_hash=hashlib.sha256(inputs.read_bytes()).hexdigest()
-    if manifest.get('golden_inputs_sha256') and actual_input_hash != manifest['golden_inputs_sha256']:
-        raise SystemExit('Golden inputs hash does not match split manifest; refusing evaluation.')
-    df=pd.read_csv(inputs).fillna('')
-    # Golden labels are stored separately and never passed to inference.
-    df=df.drop(columns=['label'],errors='ignore')
-    if args.limit: df=df.head(args.limit)
-    outdir=Path(args.output_dir) if args.output_dir else ROOT/'task2/outputs'/args.split
-    if (outdir/'predictions.csv').exists() and not args.overwrite_final:
-        existing_predictions = outdir / "predictions.csv"
-        raise SystemExit(f"Golden prediction file already exists at {existing_predictions}. Refusing to overwrite; use a fresh output directory or --overwrite-final deliberately.")
-    knowledge=load_knowledge(); results=[]
-    for i,row in df.iterrows():
-        print(f"[{len(results)+1}/{len(df)}] {row['explanation_id']} ({row['lesson_id']})",flush=True)
-        result=evaluate_one(row.to_dict(),knowledge)
-        results.append(result)
-        print(f"  verdict={result['verdict']} status={result['status']} latency={result.get('latency_seconds',0)}s",flush=True)
-    outdir.mkdir(parents=True,exist_ok=True)
-    pred=pd.DataFrame(results)
-    pred.to_csv(outdir/'predictions.csv',index=False)
-    pred.to_json(outdir/'predictions.jsonl',orient='records',lines=True,force_ascii=False)
-    summary={'split':args.split,'n_predictions':len(pred),'valid_model_outputs':int(pred.status.isin(VALID_STATUSES).sum()),'failed_outputs':int((pred.status=='failed_after_retries').sum()),'empty_input_fallbacks':int((pred.status=='empty_input_fallback').sum()),'mean_latency_seconds':float(pred.latency_seconds.mean()) if len(pred) else None,'median_latency_seconds':float(pred.latency_seconds.median()) if len(pred) else None,'model':__import__('os').getenv('LLM_MODEL','unsloth/Qwen3.5-4B-Instruct'),'base_url':__import__('os').getenv('LLM_BASE_URL','http://localhost:8000/v1'),'limited_run':args.limit is not None}
-    repairs = pred.get('feedback_field_repairs', pd.Series([[] for _ in range(len(pred))]))
-    summary['predictions_with_repaired_feedback_fields'] = int(repairs.map(lambda x: bool(x) if isinstance(x, list) else bool(x) and str(x) not in ('[]', 'nan')).sum())
-    summary['total_repaired_feedback_fields'] = int(repairs.map(lambda x: len(x) if isinstance(x, list) else len([v for v in str(x).strip('[]').split(',') if v.strip()]) if str(x).strip() not in ('', '[]', 'nan') else 0).sum())
-    summary['total_model_attempts'] = int(pred.get('attempt_count', pd.Series([0] * len(pred))).fillna(0).sum())
-    summary['retry_recoveries'] = int(pred.status.astype(str).str.startswith('recovered_after_retry').sum())
-    summary['json_schema_failure_count'] = int((pred.status == 'failed_after_retries').sum())
-    # Critical protocol: predictions are fully generated and written before the label file is read.
-    actual_label_hash=hashlib.sha256(labels.read_bytes()).hexdigest()
-    if manifest.get('golden_labels_sha256') and actual_label_hash != manifest['golden_labels_sha256']:
-        raise SystemExit('Golden labels hash does not match split manifest; predictions saved but scoring refused.')
-    gold=pd.read_csv(labels)
-    scored=pred[['explanation_id','verdict','status']].merge(gold[['explanation_id','label']],on='explanation_id',how='inner',validate='one_to_one')
-    if len(scored)!=len(pred): raise RuntimeError('Prediction/label ID mismatch; refusing to score')
-    # Failed or empty inputs are unscorable, not automatically classified as "wrong".
-    valid=scored[scored.status.isin(VALID_STATUSES) & scored.verdict.isin(['wrong','partial','understood'])]
-    summary['valid_prediction_count']=int(len(valid))
-    summary['scorable_coverage']=float(len(valid)/len(scored)) if len(scored) else None
-    summary['valid_prediction_accuracy']=float(accuracy_score(valid.label,valid.verdict)) if len(valid) else None
-    summary['classification_report_valid_predictions']=classification_report(valid.label,valid.verdict,labels=['wrong','partial','understood'],output_dict=True,zero_division=0) if len(valid) else None
-    summary['confusion_matrix_labels_order']=['wrong','partial','understood']
-    summary['confusion_matrix_valid_predictions']=confusion_matrix(valid.label,valid.verdict,labels=['wrong','partial','understood']).tolist()
-    summary['per_class_report_text_valid_predictions']=classification_report(valid.label,valid.verdict,labels=['wrong','partial','understood'],zero_division=0) if len(valid) else 'No valid predictions.'
-    summary['evaluation_note']='Accuracy is computed only on valid model predictions. Feedback-field fallbacks are explicitly counted and must be included when assessing feedback quality. Failed/empty cases are unscorable and reported through failure counts and scorable_coverage. The 60 labelled rows are used iteratively; after inspecting results, this is not an untouched test estimate.'
-    scored.to_csv(outdir/'scored_predictions.csv',index=False)
-    (outdir/'metrics.json').write_text(json.dumps(summary,indent=2,ensure_ascii=False)+'\n')
-    print(json.dumps(summary,indent=2,ensure_ascii=False))
-    print('\nBENCHMARK NOTE: The 60 supplied labelled rows are the golden set. Repeated runs can track improvement, but after inspecting results they are not an untouched test set. No golden row is used as memory.')
-if __name__=='__main__': main()
+        if args.limit < 1:
+            raise ValueError("--limit must be at least 1")
+        inputs = inputs.head(args.limit).copy()
+
+    required = {"explanation_id", "lesson_id", "explanation_text"}
+    missing = required - set(inputs.columns)
+    if missing:
+        raise ValueError(f"Missing columns in golden inputs: {sorted(missing)}")
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    prediction_path = OUTPUT_DIR / f"predictions_{run_id}.csv"
+    metrics_path = OUTPUT_DIR / f"metrics_{run_id}.json"
+
+    knowledge = load_knowledge()
+    records = []
+    total = len(inputs)
+    print(f"Generating predictions for {total} examples.")
+    # print("Golden labels have not been loaded.")
+
+    for i, (_, series) in enumerate(inputs.iterrows(), start=1):
+        row = series.to_dict()
+        started = time.perf_counter()
+        try:
+            result = evaluate_one(row, knowledge)
+            if not isinstance(result, dict):
+                result = {
+                    "explanation_id": row["explanation_id"],
+                    "verdict": None,
+                    "status": "invalid_result",
+                    "error": f"Expected dict, got {type(result).__name__}",
+                }
+        except Exception as exc:
+            result = {
+                "explanation_id": row["explanation_id"],
+                "verdict": None,
+                "status": "exception",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+
+        record = {
+            "explanation_id": str(row["explanation_id"]),
+            "lesson_id": str(row["lesson_id"]),
+            "verdict": result.get("verdict"),
+            "status": result.get("status", "missing_status"),
+            "latency_seconds": result.get(
+                "latency_seconds", round(time.perf_counter() - started, 3)
+            ),
+            "attempt_count": result.get("attempt_count"),
+            "retrieved_cases": result.get("retrieved_cases"),
+            "feedback_field_repairs": json.dumps(
+                result.get("feedback_field_repairs", []), ensure_ascii=False
+            ),
+            "validation_errors": json.dumps(
+                result.get("validation_errors", []), ensure_ascii=False
+            ),
+            "error": result.get("error", ""),
+            "got_right": result.get("got_right", ""),
+            "missed": result.get("missed", ""),
+            "hint": result.get("hint", ""),
+        }
+        records.append(record)
+        print(
+            f"[{i}/{total}] {record['explanation_id']}: "
+            f"{record['verdict']} ({record['status']})"
+        )
+
+    # Persist all model outputs before opening the labels file.
+    predictions = pd.DataFrame(records)
+    predictions.to_csv(prediction_path, index=False)
+    print(f"\nSaved predictions first: {prediction_path}")
+
+    # Only now load the golden labels.
+    if not LABELS_PATH.exists():
+        raise FileNotFoundError(f"Missing benchmark labels: {LABELS_PATH}")
+    labels = pd.read_csv(LABELS_PATH)
+
+    if not {"explanation_id", "label"}.issubset(labels.columns):
+        raise ValueError("Golden labels must contain explanation_id and label.")
+    if labels["explanation_id"].astype(str).duplicated().any():
+        raise ValueError("Duplicate explanation_id values in golden labels.")
+
+    scored = predictions.merge(
+        labels[["explanation_id", "label"]].assign(
+            explanation_id=lambda df: df["explanation_id"].astype(str)
+        ),
+        on="explanation_id",
+        how="left",
+        validate="one_to_one",
+    )
+
+    if scored["label"].isna().any():
+        missing_ids = scored.loc[scored["label"].isna(), "explanation_id"].tolist()
+        raise ValueError(f"Labels missing for prediction IDs: {missing_ids[:10]}")
+
+    valid = scored[
+        scored["status"].isin(VALID_STATUSES)
+        & scored["verdict"].isin(CLASSES)
+    ].copy()
+
+    failures = scored.loc[~scored.index.isin(valid.index)].copy()
+
+    metrics = {
+        "run_id": run_id,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "evaluation_type": "iterative_benchmark_tracking",
+        "warning": (
+            "The labelled examples have been inspected during development. "
+            "These metrics are not an untouched final-test estimate."
+        ),
+        "manifest_split_version": manifest.get("split_version"),
+        "n_inputs": int(len(scored)),
+        "n_successfully_scored": int(len(valid)),
+        "n_failed_or_invalid": int(len(failures)),
+        "status_counts": {
+            str(k): int(v)
+            for k, v in predictions["status"].value_counts(dropna=False).items()
+        },
+        "feedback_repair_count": int(
+            predictions["status"].isin(
+                {
+                    "ok_with_feedback_repair",
+                    "recovered_after_retry_with_feedback_repair",
+                }
+            ).sum()
+        ),
+        "accuracy_on_successful_predictions": None,
+        "macro_f1_on_successful_predictions": None,
+        "classification_report": {},
+        "confusion_matrix_labels_order": CLASSES,
+        "confusion_matrix": [],
+        "failure_ids": failures["explanation_id"].astype(str).tolist(),
+    }
+
+    if len(valid):
+        y_true = valid["label"].astype(str)
+        y_pred = valid["verdict"].astype(str)
+        metrics["accuracy_on_successful_predictions"] = float(
+            accuracy_score(y_true, y_pred)
+        )
+        metrics["macro_f1_on_successful_predictions"] = float(
+            f1_score(y_true, y_pred, labels=CLASSES, average="macro", zero_division=0)
+        )
+        metrics["classification_report"] = classification_report(
+            y_true,
+            y_pred,
+            labels=CLASSES,
+            output_dict=True,
+            zero_division=0,
+        )
+        metrics["confusion_matrix"] = confusion_matrix(
+            y_true, y_pred, labels=CLASSES
+        ).tolist()
+
+    metrics_path.write_text(
+        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    print("\n=== Iterative benchmark results ===")
+    print(f"Examples: {len(scored)}")
+    print(f"Successfully scored: {len(valid)}")
+    print(f"Failed/invalid: {len(failures)}")
+    print(f"Feedback repairs: {metrics['feedback_repair_count']}")
+    if len(valid):
+        print(f"Accuracy (successful predictions): "
+              f"{metrics['accuracy_on_successful_predictions']:.4f}")
+        print(f"Macro-F1 (successful predictions): "
+              f"{metrics['macro_f1_on_successful_predictions']:.4f}")
+        print("\nClassification report:")
+        print(classification_report(
+            valid["label"].astype(str),
+            valid["verdict"].astype(str),
+            labels=CLASSES,
+            zero_division=0,
+        ))
+        print("Confusion matrix (rows=true, columns=predicted):")
+        print(pd.DataFrame(
+            metrics["confusion_matrix"],
+            index=CLASSES,
+            columns=CLASSES,
+        ))
+    else:
+        print("No valid predictions to score; inspect the prediction CSV.")
+
+    print(f"\nMetrics saved to: {metrics_path}")
+    print(f"Predictions saved to: {prediction_path}")
+
+    if args.limit is not None:
+        print("NOTE: --limit was used; this was a smoke test, not a full benchmark.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,17 @@
+{
+  "split_version": "all-labelled-v1",
+  "method": "All 60 provided human-labelled rows form the golden benchmark; no development split is created.",
+  "total_labelled_rows": 60,
+  "development_rows": 0,
+  "golden_rows": 60,
+  "golden_labels_are_separate_file": true,
+  "class_counts": {
+    "partial": 20,
+    "understood": 20,
+    "wrong": 20
+  },
+  "golden_inputs_sha256": "c9be0744545ed6fa28d7061f57efaab283cc9a612fac01e0f921350246e32da0",
+  "golden_labels_sha256": "6b3e48636cee9b40e65c8bbf71262610c866240764b316853a163379ff24a75a",
+  "memory_policy": "No row or label from this set may be used as episodic memory.",
+  "evaluation_policy": "Repeated evaluation after inspecting results is iterative benchmark tracking, not an untouched test estimate."
+}

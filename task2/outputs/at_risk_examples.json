@@ -1,0 +1,86 @@
+[
+  {
+    "verdict": "understood",
+    "got_right": "The student correctly identified that plants use sunlight (light energy) to make food (glucose) and release oxygen, which aligns with the core inputs and outputs of photosynthesis.",
+    "missed": "The explanation omits specific details mentioned in the lesson key points, such as the role of chlorophyll or the location of the process in leaves/chloroplasts.",
+    "hint": "To strengthen your answer, consider mentioning where inside the plant this process happens and what specific pigment captures the light energy.",
+    "explanation_id": "E0616",
+    "feedback_field_repairs": [],
+    "status": "ok",
+    "latency_seconds": 11.951,
+    "retrieved_cases": 0,
+    "attempt_count": 1,
+    "validation_errors": [],
+    "student_id": "S016",
+    "lesson_id": "L1",
+    "explanation_text": "Plants use sunlight to make food and they give out oxygen. hope this is right!"
+  },
+  {
+    "verdict": "wrong",
+    "got_right": "The model did not identify a specific correct idea; review the explanation against the lesson rubric.",
+    "missed": "The explanation incorrectly states that plants 'eat' sunlight and that sunlight is their food, which contradicts the lesson fact that light energy is captured by chlorophyll to make glucose from carbon dioxide and water.",
+    "hint": "Recall the specific inputs (carbon dioxide and water) and outputs (glucose and oxygen) mentioned in the lesson summary. How does the student's idea of 'eating sunlight' differ from the process of using light energy to create food?",
+    "explanation_id": "E0101",
+    "feedback_field_repairs": [
+      "got_right"
+    ],
+    "status": "ok_with_feedback_repair",
+    "latency_seconds": 10.686,
+    "retrieved_cases": 0,
+    "attempt_count": 1,
+    "validation_errors": [],
+    "student_id": "S089",
+    "lesson_id": "L1",
+    "explanation_text": "Plants eat sunlight directly, sunlight is their food."
+  },
+  {
+    "verdict": "understood",
+    "got_right": "The student correctly identified that plants take in carbon dioxide and release oxygen as part of the process.",
+    "missed": "The explanation omits the role of light energy and water, which are essential inputs for photosynthesis according to the lesson context.",
+    "hint": "Consider how light energy and water fit into the equation alongside carbon dioxide to complete the description of photosynthesis.",
+    "explanation_id": "E0119",
+    "feedback_field_repairs": [],
+    "status": "ok",
+    "latency_seconds": 8.544,
+    "retrieved_cases": 0,
+    "attempt_count": 1,
+    "validation_errors": [],
+    "student_id": "S174",
+    "lesson_id": "L1",
+    "explanation_text": "Plants take in carbon dioxide and release oxygen, which is why trees are good for the air."
+  },
+  {
+    "verdict": "understood",
+    "got_right": "The student correctly identifies that a body at rest or in motion tends to resist changes in its state due to inertia, specifically citing the example of lurching forward when a bus brakes.",
+    "missed": "The explanation does not explicitly mention that greater mass results in greater inertia, which is a key point in the lesson summary.",
+    "hint": "Consider how the mass of an object relates to its resistance to changes in motion. Can you give an example comparing two objects with different masses to illustrate this relationship?",
+    "explanation_id": "E0097",
+    "feedback_field_repairs": [],
+    "status": "ok",
+    "latency_seconds": 11.738,
+    "retrieved_cases": 0,
+    "attempt_count": 1,
+    "validation_errors": [],
+    "student_id": "S222",
+    "lesson_id": "L2",
+    "explanation_text": "When a bus brakes suddenly we lurch forward because our body wants to keep moving. That's inertia. Objects only change their motion if an external force acts, and bigger mass means more inertia. not sure tho"
+  },
+  {
+    "verdict": "wrong",
+    "got_right": "The model did not identify a specific correct idea; review the explanation against the lesson rubric.",
+    "missed": "The student incorrectly identifies inertia as a 'force that pushes objects,' which contradicts the lesson's definition of inertia as resistance to change in motion and is listed as a common misconception.",
+    "hint": "Recall the lesson summary: Inertia is described as 'resistance to change in motion,' not a force. Can you explain how an object at rest stays at rest without any force pushing it?",
+    "explanation_id": "E0434",
+    "feedback_field_repairs": [
+      "got_right"
+    ],
+    "status": "ok_with_feedback_repair",
+    "latency_seconds": 10.53,
+    "retrieved_cases": 0,
+    "attempt_count": 1,
+    "validation_errors": [],
+    "student_id": "S291",
+    "lesson_id": "L2",
+    "explanation_text": "Inertia is the force that pushes objects forward when they move. hope this is right!"
+  }
+]
