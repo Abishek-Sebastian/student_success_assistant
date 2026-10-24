@@ -129,6 +129,75 @@ The provided 60 labelled explanations are the available labelled benchmark. The 
 
 Once results on the 60 rows have been inspected, further prompt/model changes and reruns are **iterative benchmark tracking**, not an untouched final-test estimate. Report this limitation honestly. The labels are reference annotations and may themselves contain errors; flag suspected issues rather than silently changing them.
 
+
+## Task 2: LLM Grading
+
+### Evaluation protocol
+
+The 60 explanations with supplied labels are the Task 2 golden evaluation set. All 60 rows are evaluated; no labelled row, label, or derived case may be used as grading memory.
+
+The grader uses the lesson rubric and the student's explanation to predict a verdict (`understood`, `partial`, or `wrong`) and generate structured feedback. Golden labels are loaded only after predictions have been generated and saved.
+
+Because we inspect the golden-set results to improve the system, subsequent scores represent **iterative benchmark performance**, not an untouched final test estimate.
+
+### Reset generated Task 2 artifacts
+
+First inspect the reset script's targets:
+
+```bash
+bash scripts/task2/reset_task2_generated.sh --dry-run
+```
+
+If all listed paths are disposable generated artifacts, reset them:
+
+```bash
+bash scripts/task2/reset_task2_generated.sh
+```
+
+The reset removes only explicitly listed paths. It must not remove the original datasets, lesson knowledge, source code, or environment configuration.
+
+### Prepare the evaluation data and memory
+
+Run these commands from the repository root:
+
+```bash
+python scripts/task2/task2_prepare_split.py
+python scripts/task2/task2_prepare_memory.py
+```
+
+The preparation script writes:
+- `task2/data/evaluation/golden_inputs.csv`: all 60 labelled explanations, without the label column.
+- `task2/data/evaluation/golden_labels.csv`: reference labels kept separate from inference inputs.
+- `task2/data/split_manifest.json`: row counts, class counts, and file hashes.
+
+The memory preparation script must not import the supplied labelled dataset. Memory cases, if added in the future, must come from outside the golden set and be independently verified and explicitly approved.
+
+### Run the golden evaluation
+
+Use the configured LLM endpoint and model from the environment. Run:
+
+```bash
+python scripts/task2/task2_evaluate.py --confirm-final-evaluation
+```
+
+The command generates and saves predictions before joining reference labels for scoring. It refuses to overwrite existing golden prediction artifacts by default. To preserve previous runs, use a new output directory for each experiment.
+
+Expected output files under `task2/outputs/golden/` include:
+
+- `predictions.csv` and `predictions.jsonl`: model outputs.
+- `scored_predictions.csv`: predictions joined with reference labels for analysis.
+- `metrics.json`: accuracy, per-class metrics, confusion matrix, coverage, latency, and validation statistics.
+
+Review failures, invalid outputs, feedback quality, and per-class errors alongside accuracy. Keep each experiment's model, prompt, and configuration identifiable.
+
+### Important data policy
+
+- Never add any of the 60 golden rows or their labels to memory.
+- Never expose golden labels to the model during inference.
+- Do not silently overwrite previous experiment results.
+- Preserve original labels; document any independently verified corrections.
+- Do not report iteratively tuned golden-set scores as an untouched test result.
+
 ## Outputs, documentation, and archive
 
 - `outputs/` contains Task 1 experiment metrics, predictions, and reports.
