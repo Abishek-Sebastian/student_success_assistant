@@ -1,4 +1,4 @@
-"""OpenAI-compatible evaluator with robust JSON handling and lesson-grounded CBR.
+"""OpenAI-compatible evaluator with robust JSON handling and lesson-rubric-first grading with optional verified external examples.
 
 The model supplies the verdict and feedback only. The application owns explanation_id,
 which avoids wasting retries on a model copying or inventing an identifier.
@@ -20,7 +20,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSONS_PATH = ROOT / "task2/knowledge/lesson_rubric.json"
-DEV_PATH = ROOT / "task2/data/development/development_cases.csv"
 MEMORY_PATH = ROOT / "task2/memory/approved_cases.jsonl"
 VERDICTS = {"understood", "partial", "wrong"}
 MODEL_FIELDS = ("verdict", "got_right", "missed", "hint")
@@ -45,13 +44,12 @@ def retrieve_cases(
     k: int = 2,
     exclude_explanation_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Retrieve same-lesson development cases, excluding self and exact duplicates.
+    """Retrieve only independently verified cases outside the 60-row golden set.
 
-    Golden inputs/labels are never read here. During development evaluation this is
-    leave-one-out retrieval from the development pool; golden evaluation may use the
-    full development pool as its approved episodic memory.
+    The default memory is empty, yielding a zero-shot grader against the lesson rubric.
+    No supplied labelled row may be used as an episodic example.
     """
-    if k <= 0 or not str(explanation).strip() or not DEV_PATH.exists():
+    if k <= 0 or not str(explanation).strip():
         return []
     # Only explicitly approved, human-labelled development cases are eligible.
     # This file is never populated from model predictions or golden-set data.
@@ -67,7 +65,9 @@ def retrieve_cases(
             continue
         if record.get("approval_status") != "approved":
             continue
-        if record.get("label_source") != "provided_human_label":
+        if record.get("label_source") not in {"manual_review", "larger_llm_then_human_verified"}:
+            continue
+        if record.get("source_dataset") == "provided_60_labelled_rows" or record.get("split") == "golden":
             continue
         if str(record.get("lesson_id")) != str(lesson_id):
             continue
@@ -102,7 +102,7 @@ def retrieve_cases(
             "verdict": str(row.get("verified_verdict", "")).strip().lower(),
             "similarity": round(score, 3),
             "case_id": str(row.get("case_id", "")),
-            "source": "approved_human_labelled_development_memory",
+            "source": "approved_independently_verified_memory",
             "memory_version": row.get("memory_version", 1),
         })
         if len(cases) >= k:
@@ -135,7 +135,7 @@ Example shape (values are illustrative, not an answer to the student's explanati
         "lesson_summary": lesson["summary"],
         "key_points": lesson["key_points"],
         "common_misconceptions": lesson["common_misconceptions"],
-        "similar_human_labelled_development_cases": [
+        "similar_independently_verified_cases": [
             {k: c[k] for k in ("explanation", "verdict", "similarity") if k in c}
             for c in cases
         ],

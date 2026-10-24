@@ -1,17 +1,22 @@
 # Task 2 memory policy
 
-This is a small, auditable CBR system with explicit memory boundaries.
+The 60 provided labelled explanations are the golden evaluation dataset. **No row, label, duplicate, or derived case from those 60 examples may be stored in episodic memory or included in a grading prompt.**
 
-- **Semantic memory:** `knowledge/lesson_rubric.json` contains lesson summaries, key points, and common misconceptions.
-- **Episodic memory:** `approved_cases.jsonl` contains only provided human-labelled examples from the development split. Rebuild with `python scripts/task2/task2_prepare_memory.py`; review the generated `case_memory_manifest.json` and hashes.
-- **Procedural memory:** the prompt, retrieval, validation, and retry/repair rules in `src/evaluator.py`.
-- **Working memory:** one inference request's lesson rubric, student explanation, and retrieved examples; it is not persisted.
+- **Semantic memory:** `../knowledge/lesson_rubric.json` contains lesson summaries, key points, and common misconceptions. This is the default grading context.
+- **Episodic memory:** `approved_cases.jsonl` is empty by default. It may contain only examples outside the 60-row dataset that have been independently verified by manual review or by a larger LLM followed by human verification. Each case requires explicit approval and provenance.
+- **Procedural memory:** the prompt, retrieval, validation, and retry/repair rules in `../src/evaluator.py`.
+- **Working memory:** the current request's rubric and student explanation; it is not persisted.
 
-## CBR cycle
+## Grading and improvement cycle
 
-1. **Retrieve:** filter approved cases to the same lesson and rank with TF-IDF similarity. Exclude the current ID and exact normalized-text matches.
-2. **Reuse:** provide up to two human-labelled cases as contextual examples; the model must still assess the current explanation against the lesson rubric.
-3. **Revise:** validate JSON/schema, retry only schema failures, and deterministically fill blank feedback fields with visible repair markers. These fallbacks do not change the verdict.
-4. **Retain:** no automatic retention. A future case can be added only from a human-verified label, after explicit review and memory versioning. Model predictions, golden labels, and golden inputs are never automatically added.
+1. Run zero-shot grading using the lesson rubric and no episodic examples.
+2. Compare predictions with the supplied labels only after predictions have been saved.
+3. Inspect disagreements. Use this chat or a stronger model to propose an explanation of the disagreement, but treat that as a hypothesis, not ground truth.
+4. Human-verify any new example intended for memory. It must come from outside the 60-row golden dataset; never retain golden examples or labels.
+5. Version prompt, model, settings, and external verified memory; rerun all 60 examples to track changes.
 
-The golden set is isolated from memory. Development evaluation uses leave-one-out retrieval and excludes exact duplicate text. Golden evaluation can retrieve from this approved development memory, but never from the golden set itself. If prompts or memory are changed after examining golden results, the golden set is considered consumed and a new held-out set is needed for a fresh final claim.
+The 60 rows can support iterative comparison across versions, but once results are inspected they are no longer an untouched test set. Report the results as benchmark agreement / iterative evaluation, not as an unbiased final held-out estimate. A fresh independently labelled set would be needed for that stronger claim.
+
+## Retrieval
+
+If external verified memory is later populated, retrieval filters by lesson and ranks examples with TF-IDF word/bi-gram vectors and cosine similarity. The default empty memory means no retrieval and a zero-shot baseline. No automatic model self-retention is allowed.

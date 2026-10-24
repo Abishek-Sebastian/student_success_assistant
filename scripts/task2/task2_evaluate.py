@@ -11,34 +11,29 @@ from src.evaluator import load_knowledge, evaluate_one, VALID_STATUSES
 
 def main():
     ap=argparse.ArgumentParser()
-    ap.add_argument('--split',choices=['golden','development'],default='development')
+    ap.add_argument('--split',choices=['golden'],default='golden', help='All 60 supplied labelled rows are the golden evaluation set')
     ap.add_argument('--limit',type=int,default=None,help='Smoke-test only; do not use limited runs as final metrics')
     ap.add_argument('--output-dir',default=None)
     ap.add_argument('--confirm-final-evaluation',action='store_true',help='Required to run the locked golden evaluation')
     ap.add_argument('--overwrite-final',action='store_true',help='Allow replacing existing golden prediction artifacts; avoid unless explicitly necessary')
     args=ap.parse_args()
-    if args.split == 'golden' and not args.confirm_final_evaluation:
-        ap.error('Golden evaluation is locked. Add --confirm-final-evaluation only after freezing model, prompt, memory, and retry settings.')
-    if args.split == 'golden' and args.limit is not None:
+    if not args.confirm_final_evaluation:
+        ap.error('This command scores the 60-row labelled benchmark. Add --confirm-final-evaluation to acknowledge that repeated runs are iterative benchmark tracking, not an untouched test estimate.')
+    if args.limit is not None:
         ap.error('Do not use --limit for final golden evaluation.')
-    if args.split=='golden':
-        inputs=ROOT/'task2/data/evaluation/golden_inputs.csv'
-        labels=ROOT/'task2/data/evaluation/golden_labels.csv'
-    else:
-        inputs=ROOT/'task2/data/development/development_cases.csv'
-        labels=inputs
+    inputs=ROOT/'task2/data/evaluation/golden_inputs.csv'
+    labels=ROOT/'task2/data/evaluation/golden_labels.csv'
     manifest_path=ROOT/'task2/data/split_manifest.json'
     manifest=json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {}
-    if args.split == 'golden':
-        actual_input_hash=hashlib.sha256(inputs.read_bytes()).hexdigest()
-        if manifest.get('golden_inputs_sha256') and actual_input_hash != manifest['golden_inputs_sha256']:
-            raise SystemExit('Golden inputs hash does not match split manifest; refusing final evaluation.')
+    actual_input_hash=hashlib.sha256(inputs.read_bytes()).hexdigest()
+    if manifest.get('golden_inputs_sha256') and actual_input_hash != manifest['golden_inputs_sha256']:
+        raise SystemExit('Golden inputs hash does not match split manifest; refusing evaluation.')
     df=pd.read_csv(inputs).fillna('')
-    # The development CSV contains labels for scoring, but never pass them to inference.
+    # Golden labels are stored separately and never passed to inference.
     df=df.drop(columns=['label'],errors='ignore')
     if args.limit: df=df.head(args.limit)
     outdir=Path(args.output_dir) if args.output_dir else ROOT/'task2/outputs'/args.split
-    if args.split == 'golden' and (outdir/'predictions.csv').exists() and not args.overwrite_final:
+    if (outdir/'predictions.csv').exists() and not args.overwrite_final:
         existing_predictions = outdir / "predictions.csv"
         raise SystemExit(f"Golden prediction file already exists at {existing_predictions}. Refusing to overwrite; use a fresh output directory or --overwrite-final deliberately.")
     knowledge=load_knowledge(); results=[]
@@ -59,10 +54,9 @@ def main():
     summary['retry_recoveries'] = int(pred.status.astype(str).str.startswith('recovered_after_retry').sum())
     summary['json_schema_failure_count'] = int((pred.status == 'failed_after_retries').sum())
     # Critical protocol: predictions are fully generated and written before the label file is read.
-    if args.split == 'golden':
-        actual_label_hash=hashlib.sha256(labels.read_bytes()).hexdigest()
-        if manifest.get('golden_labels_sha256') and actual_label_hash != manifest['golden_labels_sha256']:
-            raise SystemExit('Golden labels hash does not match split manifest; predictions saved but scoring refused.')
+    actual_label_hash=hashlib.sha256(labels.read_bytes()).hexdigest()
+    if manifest.get('golden_labels_sha256') and actual_label_hash != manifest['golden_labels_sha256']:
+        raise SystemExit('Golden labels hash does not match split manifest; predictions saved but scoring refused.')
     gold=pd.read_csv(labels)
     scored=pred[['explanation_id','verdict','status']].merge(gold[['explanation_id','label']],on='explanation_id',how='inner',validate='one_to_one')
     if len(scored)!=len(pred): raise RuntimeError('Prediction/label ID mismatch; refusing to score')
@@ -75,10 +69,9 @@ def main():
     summary['confusion_matrix_labels_order']=['wrong','partial','understood']
     summary['confusion_matrix_valid_predictions']=confusion_matrix(valid.label,valid.verdict,labels=['wrong','partial','understood']).tolist()
     summary['per_class_report_text_valid_predictions']=classification_report(valid.label,valid.verdict,labels=['wrong','partial','understood'],zero_division=0) if len(valid) else 'No valid predictions.'
-    summary['evaluation_note']='Accuracy is computed only on valid model predictions. Feedback-field fallbacks are explicitly counted and must be included when assessing feedback quality. Failed/empty cases are unscorable and reported through failure counts and scorable_coverage.'
+    summary['evaluation_note']='Accuracy is computed only on valid model predictions. Feedback-field fallbacks are explicitly counted and must be included when assessing feedback quality. Failed/empty cases are unscorable and reported through failure counts and scorable_coverage. The 60 labelled rows are used iteratively; after inspecting results, this is not an untouched test estimate.'
     scored.to_csv(outdir/'scored_predictions.csv',index=False)
     (outdir/'metrics.json').write_text(json.dumps(summary,indent=2,ensure_ascii=False)+'\n')
     print(json.dumps(summary,indent=2,ensure_ascii=False))
-    if args.split=='golden':
-        print('\nFINAL EVALUATION NOTE: This golden set is now considered consumed for this model/configuration. Do not tune on this result and re-report it as untouched. Use a new held-out set for any subsequent final claim.')
+    print('\nBENCHMARK NOTE: The 60 supplied labelled rows are the golden set. Repeated runs can track improvement, but after inspecting results they are not an untouched test set. No golden row is used as memory.')
 if __name__=='__main__': main()
