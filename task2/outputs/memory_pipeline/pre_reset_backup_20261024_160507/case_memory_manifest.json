@@ -1,0 +1,14 @@
+{
+  "memory_version": 2,
+  "source": "Independently verified cases only; never import the supplied 60 labelled rows.",
+  "case_count": 0,
+  "label_sources_allowed": [
+    "larger_llm_then_human_verified",
+    "manual_review"
+  ],
+  "golden_data_used": false,
+  "provided_labelled_rows_allowed": false,
+  "model_generated_cases_allowed_without_human_verification": false,
+  "retention_policy": "No automatic retention. Each case must be independently verified and manually approved.",
+  "memory_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

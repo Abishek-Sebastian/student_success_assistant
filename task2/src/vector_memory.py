@@ -19,7 +19,9 @@ EMBEDDING_MODEL = os.getenv(
 ALLOWED_LABEL_SOURCES = {
     "manual_review",
     "larger_llm_then_human_verified",
+    "poc_assumed_provisional",
 }
+ALLOWED_APPROVAL_STATUSES = {"approved", "approved_for_poc"}
 VALID_VERDICTS = {"understood", "partial", "wrong"}
 
 
@@ -46,7 +48,7 @@ def _load_approved_records() -> list[dict[str, Any]]:
             ) from exc
 
         if (
-            record.get("approval_status") != "approved"
+            record.get("approval_status") not in ALLOWED_APPROVAL_STATUSES
             or record.get("label_source") not in ALLOWED_LABEL_SOURCES
         ):
             raise ValueError(
@@ -67,7 +69,7 @@ def _load_approved_records() -> list[dict[str, Any]]:
         case_id = str(record.get("case_id", "")).strip()
         lesson_id = str(record.get("lesson_id", "")).strip()
         explanation = str(record.get("explanation_text", "")).strip()
-        verdict = str(record.get("final_verdict", "")).strip().lower()
+        verdict = str(record.get("correct_verdict", record.get("final_verdict", record.get("verified_verdict", "")))).strip().lower()
 
         if not case_id or not lesson_id or not explanation:
             raise ValueError(
@@ -145,12 +147,20 @@ def rebuild_index() -> int:
         metadatas=[
             {
                 "lesson_id": str(r["lesson_id"]),
-                "final_verdict": str(r["final_verdict"]).lower(),
+                "final_verdict": str(r.get("correct_verdict", r.get("final_verdict", r.get("verified_verdict", "")))).lower(),
                 "review_status": str(r["approval_status"]),
                 "source_split": str(r["split"]),
                 "source_dataset": str(r.get("source_dataset", "independent")),
                 "memory_version": str(r.get("memory_version", "1")),
                 "label_source": str(r["label_source"]),
+                "case_type": str(r.get("case_type", "learning_case")),
+                "predicted_verdict": str(r.get("predicted_verdict", "")),
+                "error_type": str(r.get("error_type", "")),
+                "correction_principle": str(r.get("correction_principle", "")),
+                "error_description": str(r.get("error_description", "")),
+                "rubric_concepts_present": json.dumps(r.get("rubric_concepts_present", []), ensure_ascii=False),
+                "rubric_concepts_missing": json.dumps(r.get("rubric_concepts_missing", []), ensure_ascii=False),
+                "retrieval_tags": json.dumps(r.get("retrieval_tags", []), ensure_ascii=False),
             }
             for r in records
         ],
@@ -221,8 +231,17 @@ def retrieve_vector_cases(
             "lesson_id": metadata["lesson_id"],
             "explanation_text": document,
             "final_verdict": metadata["final_verdict"],
+            "correct_verdict": metadata["final_verdict"],
             "approval_status": metadata["review_status"],
             "label_source": metadata["label_source"],
+            "case_type": metadata.get("case_type", "learning_case"),
+            "predicted_verdict": metadata.get("predicted_verdict", ""),
+            "error_type": metadata.get("error_type", ""),
+            "correction_principle": metadata.get("correction_principle", ""),
+            "error_description": metadata.get("error_description", ""),
+            "rubric_concepts_present": json.loads(metadata.get("rubric_concepts_present", "[]")),
+            "rubric_concepts_missing": json.loads(metadata.get("rubric_concepts_missing", "[]")),
+            "retrieval_tags": json.loads(metadata.get("retrieval_tags", "[]")),
             "similarity": round(1.0 - float(distance), 4),
         })
 
