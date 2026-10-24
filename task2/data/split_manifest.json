@@ -1,0 +1,17 @@
+{
+  "split_version": "v1",
+  "method": "deterministic hash-ordered exact-text-group split, class-stratified development subset",
+  "total_labelled_rows": 60,
+  "development_rows": 18,
+  "golden_rows": 42,
+  "development_per_class": {
+    "partial": 6,
+    "understood": 6,
+    "wrong": 6
+  },
+  "golden_labels_are_separate_file": true,
+  "exact_normalized_text_overlap": 0,
+  "golden_inputs_sha256": "fd02709d1457bf1ed7ddf1b3dd5237d32f5748b59b2c54f8883a25621ceded42",
+  "golden_labels_sha256": "e1b19c2fd4498595d65f7518892b7f5065d90b82e1a855a72ea027021c608fe6",
+  "warning": "Do not inspect golden_labels.csv during prompt/model/retrieval development. Evaluation script joins it only after predictions are generated."
+}

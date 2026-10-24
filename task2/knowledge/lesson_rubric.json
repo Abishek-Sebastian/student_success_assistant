@@ -1,0 +1,48 @@
+{
+  "L1": {
+    "title": "Photosynthesis",
+    "summary": "Plants use light energy to make glucose from carbon dioxide and water, releasing oxygen.",
+    "key_points": [
+      "Light energy is captured by chlorophyll and used to make food.",
+      "The inputs are carbon dioxide and water.",
+      "The outputs include glucose and oxygen.",
+      "The process occurs mainly in leaves, in chloroplasts."
+    ],
+    "common_misconceptions": [
+      "Plants take in oxygen and release carbon dioxide as the description of photosynthesis.",
+      "Plants obtain their food directly from soil.",
+      "Oxygen or glucose is described as an input rather than a product."
+    ]
+  },
+  "L2": {
+    "title": "Newton's First Law (Inertia)",
+    "summary": "An object remains at rest or continues at constant speed in a straight line unless acted on by an unbalanced external force. Inertia is resistance to change in motion; greater mass means greater inertia.",
+    "key_points": [
+      "An object at rest stays at rest; a moving object continues at constant speed in a straight line.",
+      "This state continues unless an unbalanced external force acts.",
+      "The tendency to resist change in motion is called inertia.",
+      "Greater mass means greater inertia."
+    ],
+    "common_misconceptions": [
+      "A constant force is needed to maintain constant motion.",
+      "Moving objects naturally stop without an external force.",
+      "Inertia is itself a force that pushes objects.",
+      "Greater mass means less inertia."
+    ]
+  },
+  "L3": {
+    "title": "Supply and Demand",
+    "summary": "With supply fixed, higher demand generally raises price. With demand fixed, higher supply generally lowers price. Equilibrium is where quantity supplied equals quantity demanded; price signals help balance buyers and sellers.",
+    "key_points": [
+      "Higher demand with supply unchanged generally raises price.",
+      "Higher supply with demand unchanged generally lowers price.",
+      "Equilibrium is where quantity supplied equals quantity demanded.",
+      "Price signals help balance buyers and sellers."
+    ],
+    "common_misconceptions": [
+      "Higher supply always raises price, with demand held constant.",
+      "Higher demand lowers price, with supply held constant.",
+      "Demand means how much a company can produce."
+    ]
+  }
+}

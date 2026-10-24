@@ -224,7 +224,7 @@ def choose_policy(y, score_by_stage, config_scores, precision_floor, top_k=3):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--input-dir",default="data/cascade_snapshots")
-    ap.add_argument("--output-dir",default="outputs/repeated_boosting_imbalance")
+    ap.add_argument("--output-dir",default="outputs/xgboost_oversampling_tuning")
     ap.add_argument("--outer-seeds",type=int,nargs="+",default=[42])
     ap.add_argument("--inner-folds",type=int,default=2)
     ap.add_argument("--precision-floors",type=float,nargs="+",default=[.30,.40,.50])

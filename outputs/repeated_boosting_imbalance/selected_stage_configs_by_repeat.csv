@@ -1,10 +1,4 @@
 repeat,seed,precision_floor,stage,config,feature_set,model,sampling,balance
-1,42,0.3,A,demographics::logistic,demographics,logistic,none,none
-1,42,0.3,B,compact_plus_module::logistic_class_weight,compact_plus_module,logistic_class_weight,none,balanced
-1,42,0.3,C,compact_plus_module::xgb_d2_group_weight,compact_plus_module,xgb_d2_group_weight,none,group_ratio
 1,42,0.4,A,demographics::logistic,demographics,logistic,none,none
 1,42,0.4,B,compact_plus_module::logistic,compact_plus_module,logistic,none,none
-1,42,0.4,C,compact_plus_module::xgb_d2_group_oversample,compact_plus_module,xgb_d2_group_oversample,group_oversample,none
-1,42,0.5,A,demographics::logistic,demographics,logistic,none,none
-1,42,0.5,B,compact_plus_module::logistic_class_weight,compact_plus_module,logistic_class_weight,none,balanced
-1,42,0.5,C,compact_plus_module::xgb_d2_group_oversample,compact_plus_module,xgb_d2_group_oversample,group_oversample,none
+1,42,0.4,C,compact_plus_module::logistic_group_oversample,compact_plus_module,logistic_group_oversample,group_oversample,none

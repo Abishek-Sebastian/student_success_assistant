@@ -1,0 +1,19 @@
+explanation_id,student_id,lesson_id,explanation_text,label
+E0022,S490,L3,Demand means how much a company can produce. i think,wrong
+E0040,S016,L2,"Newton's first law says things keep doing what they are doing. If it's resting it stays resting, if moving it keeps moving at constant velocity, until an outside force changes that. More mass = more inertia. i think",understood
+E0043,S430,L2,Newton's first law says force equals mass times acceleration. not sure tho,wrong
+E0049,S362,L3,"If there is a lot of a product, it becomes cheap. hope this is right!",partial
+E0130,S222,L3,Demand means how much a company can produce. i think,wrong
+E0157,S237,L3,"Example: mangoes in summer are cheap because supply is high. When demand rises but supply doesn't, prices climb. Equilibrium is the price where buyers and sellers want the same amount.",understood
+E0182,S147,L3,"If demand increases, prices fall because the seller sells more.",wrong
+E0207,S163,L2,Newton's first law says force equals mass times acceleration. not sure tho,wrong
+E0287,S125,L3,"Example: mangoes in summer are cheap because supply is high. When demand rises but supply doesn't, prices climb. Equilibrium is the price where buyers and sellers want the same amount.",understood
+E0377,S087,L2,"Objects keep moving because of inertia, and friction slows them down eventually. hope this is right!",partial
+E0419,S314,L2,An object at rest stays at rest. Heavy things are harder to move.,partial
+E0420,S494,L2,"Newton's first law says things keep doing what they are doing. If it's resting it stays resting, if moving it keeps moving at constant velocity, until an outside force changes that. More mass = more inertia. hope this is right!",understood
+E0472,S247,L2,"Newton's first law says things keep doing what they are doing. If it's resting it stays resting, if moving it keeps moving at constant velocity, until an outside force changes that. More mass = more inertia. hope this is right!",understood
+E0504,S357,L2,"Objects keep moving because of inertia, and friction slows them down eventually. hope this is right!",partial
+E0540,S327,L2,"Newton's first law says things keep doing what they are doing. If it's resting it stays resting, if moving it keeps moving at constant velocity, until an outside force changes that. More mass = more inertia. i think",understood
+E0581,S138,L3,"If demand increases, prices fall because the seller sells more.",wrong
+E0587,S127,L2,"Objects keep moving because of inertia, and friction slows them down eventually.",partial
+E0699,S075,L3,Supply and demand decide prices. When they are equal it is called balance. hope this is right!,partial
