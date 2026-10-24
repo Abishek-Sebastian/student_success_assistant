@@ -158,28 +158,6 @@ The evaluator receives only `explanation_id`, `lesson_id`, and `explanation_text
 
 Metrics include accuracy, macro-F1, weighted-F1, per-class precision/recall/F1, confusion matrix, valid/failed prediction counts, mean latency, and mean retrieved-case count. Invalid/failed outputs are excluded from classification scores but included in the invalid prediction rate. Compare memory-on/off runs on the same dataset and model configuration; preserve each run folder rather than overwriting prior results.
 
-`task2/pipeline/seed_poc_memory.py` is retained in the pipeline directory for explicit/manual POC seeding only. It is not part of the default workflow and should not be run before the automated memory build unless deliberately intended.
-
-### Scripts being retired from the active workflow
-
-The old split-file workflow is superseded by the single labelled dataset files above. Do not use these legacy scripts/files in the new workflow:
-
-- `scripts/task2/task2_prepare_split.py`
-- `scripts/task2/task2_prepare_memory.py`
-- `scripts/task2/task2_run_at_risk.py` (the new risk evaluation uses `risk_dataset.csv` directly)
-- The previous `scripts/task2/task2_evaluate.py` implementation is replaced by the four-condition benchmark runner in this bundle.
-- `task2/data/development/development_cases.csv`
-- `task2/data/evaluation/golden_inputs.csv`
-- `task2/data/evaluation/golden_labels.csv`
-- `task2/data/evaluation/golden_manifest.json`
-- `task2/data/split_manifest.json`
-
-Delete the listed local files only after applying and checking the replacement workflow. The standalone `task2_build_memory_index.py` is optional because the memory builder rebuilds Chroma by default. Keep it only if you want a separate manual index-rebuild command. Update tests to the current labelled dataset layout before running them.
-
-### Evaluation caveat
-
-If the golden results have already been inspected and used to tune prompts, model choice, or memory, report them as iterative benchmark tracking rather than an untouched final-test estimate. Preserve labels and document any independently verified corrections instead of silently changing them.
-
 
 ## Outputs, documentation, and archive
 
