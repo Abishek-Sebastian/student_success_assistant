@@ -1,19 +1,19 @@
 repeat,seed,config,family,status,error,oof_ap,n_dev_students,n_dev_scored,dev_prevalence_scored
-1,17,logistic_class_weight,logistic,ok,,0.5100734091752859,400,353,0.18413597733711048
-1,17,gradient_boosting,gradient_boosting,ok,,0.4717711136485969,400,353,0.18413597733711048
-1,17,poly3_svm_unweighted,poly3_svm,ok,,0.4965430854895317,400,353,0.18413597733711048
-1,17,poly3_svm_class_weighted,poly3_svm,ok,,0.4902204190760635,400,353,0.18413597733711048
-1,17,poly3_svm_bagged_21_student_bootstraps,bagged_poly3_svm,ok,,0.5351633109893219,400,353,0.18413597733711048
+1,17,logistic_class_weight,logistic,ok,,0.4459251570650866,400,353,0.18413597733711048
+1,17,gradient_boosting,gradient_boosting,ok,,0.4856802015604743,400,353,0.18413597733711048
+1,17,poly3_svm_unweighted,poly3_svm,ok,,0.4541870200878275,400,353,0.18413597733711048
+1,17,poly3_svm_class_weighted,poly3_svm,ok,,0.44690830152929084,400,353,0.18413597733711048
+1,17,poly3_svm_bagged_21_student_bootstraps,bagged_poly3_svm,ok,,0.47525489593333015,400,353,0.18413597733711048
 1,17,poly3_svm_adaboost_10_rounds,adaboost_poly3_svm,"fold 1: ValueError: BaseClassifier in AdaBoostClassifier ensemble is worse than random, ensemble can not be fit.","fold 1: ValueError: BaseClassifier in AdaBoostClassifier ensemble is worse than random, ensemble can not be fit.",,400,0,
-2,42,logistic_class_weight,logistic,ok,,0.5360362324212541,400,350,0.18571428571428572
-2,42,gradient_boosting,gradient_boosting,ok,,0.5380595389697748,400,350,0.18571428571428572
-2,42,poly3_svm_unweighted,poly3_svm,ok,,0.46166734364973494,400,350,0.18571428571428572
-2,42,poly3_svm_class_weighted,poly3_svm,ok,,0.48869064737952445,400,350,0.18571428571428572
-2,42,poly3_svm_bagged_21_student_bootstraps,bagged_poly3_svm,ok,,0.4936715725794354,400,350,0.18571428571428572
+2,42,logistic_class_weight,logistic,ok,,0.5132132050897552,400,350,0.18571428571428572
+2,42,gradient_boosting,gradient_boosting,ok,,0.5213206730783206,400,350,0.18571428571428572
+2,42,poly3_svm_unweighted,poly3_svm,ok,,0.5462083225311026,400,350,0.18571428571428572
+2,42,poly3_svm_class_weighted,poly3_svm,ok,,0.5144066044312695,400,350,0.18571428571428572
+2,42,poly3_svm_bagged_21_student_bootstraps,bagged_poly3_svm,ok,,0.5452644683480128,400,350,0.18571428571428572
 2,42,poly3_svm_adaboost_10_rounds,adaboost_poly3_svm,"fold 1: ValueError: BaseClassifier in AdaBoostClassifier ensemble is worse than random, ensemble can not be fit.","fold 1: ValueError: BaseClassifier in AdaBoostClassifier ensemble is worse than random, ensemble can not be fit.",,400,0,
-3,73,logistic_class_weight,logistic,ok,,0.5219384560159221,400,355,0.19154929577464788
-3,73,gradient_boosting,gradient_boosting,ok,,0.4758343870477855,400,355,0.19154929577464788
-3,73,poly3_svm_unweighted,poly3_svm,ok,,0.5210326321328834,400,355,0.19154929577464788
-3,73,poly3_svm_class_weighted,poly3_svm,ok,,0.532047440768016,400,355,0.19154929577464788
-3,73,poly3_svm_bagged_21_student_bootstraps,bagged_poly3_svm,ok,,0.5556584207391034,400,355,0.19154929577464788
+3,73,logistic_class_weight,logistic,ok,,0.540822708144272,400,355,0.19154929577464788
+3,73,gradient_boosting,gradient_boosting,ok,,0.4179842095228202,400,355,0.19154929577464788
+3,73,poly3_svm_unweighted,poly3_svm,ok,,0.5133785364519504,400,355,0.19154929577464788
+3,73,poly3_svm_class_weighted,poly3_svm,ok,,0.5172876754011911,400,355,0.19154929577464788
+3,73,poly3_svm_bagged_21_student_bootstraps,bagged_poly3_svm,ok,,0.5433176669998653,400,355,0.19154929577464788
 3,73,poly3_svm_adaboost_10_rounds,adaboost_poly3_svm,"fold 1: ValueError: BaseClassifier in AdaBoostClassifier ensemble is worse than random, ensemble can not be fit.","fold 1: ValueError: BaseClassifier in AdaBoostClassifier ensemble is worse than random, ensemble can not be fit.",,400,0,

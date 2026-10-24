@@ -14,47 +14,47 @@
 ## Repeated outer cascade summary
 |   precision_floor |   test_precision_mean |   test_precision_std |   test_precision_min |   test_precision_max |   test_recall_mean |   test_recall_std |   test_recall_min |   test_recall_max |   test_flagged_mean |   test_flagged_std |   test_flagged_min |   test_flagged_max |   test_tp_mean |   test_tp_std |   test_tp_min |   test_tp_max |   test_fp_mean |   test_fp_std |   test_fp_min |   test_fp_max |   test_fn_mean |   test_fn_std |   test_fn_min |   test_fn_max |   precision_floor_met_on_test_mean |   development_feasible_mean |
 |------------------:|----------------------:|---------------------:|---------------------:|---------------------:|-------------------:|------------------:|------------------:|------------------:|--------------------:|-------------------:|-------------------:|-------------------:|---------------:|--------------:|--------------:|--------------:|---------------:|--------------:|--------------:|--------------:|---------------:|--------------:|--------------:|--------------:|-----------------------------------:|----------------------------:|
-|               0.4 |              0.583333 |                  nan |             0.583333 |             0.583333 |               0.56 |               nan |              0.56 |              0.56 |                  24 |                nan |                 24 |                 24 |             14 |           nan |            14 |            14 |             10 |           nan |            10 |            10 |             11 |           nan |            11 |            11 |                                  1 |                           1 |
+|               0.4 |              0.435897 |                  nan |             0.435897 |             0.435897 |               0.68 |               nan |              0.68 |              0.68 |                  39 |                nan |                 39 |                 39 |             17 |           nan |            17 |            17 |             22 |           nan |            22 |            22 |              8 |           nan |             8 |             8 |                                  1 |                           1 |
 
 ## Selected configuration frequency
-|   precision_floor | stage   | config                                         | feature_set         |   selection_count |
-|------------------:|:--------|:-----------------------------------------------|:--------------------|------------------:|
-|               0.4 | A       | demographics::logistic                         | demographics        |                 1 |
-|               0.4 | B       | compact_plus_module::logistic                  | compact_plus_module |                 1 |
-|               0.4 | C       | compact_plus_module::logistic_group_oversample | compact_plus_module |                 1 |
+|   precision_floor | stage   | config                        | feature_set         |   selection_count |
+|------------------:|:--------|:------------------------------|:--------------------|------------------:|
+|               0.4 | A       | demographics::logistic        | demographics        |                 1 |
+|               0.4 | B       | compact_plus_module::logistic | compact_plus_module |                 1 |
+|               0.4 | C       | compact_plus_module::logistic | compact_plus_module |                 1 |
 
 ## Inner OOF AP by stage/configuration (top rows)
 | stage   | config                                                  |     mean |   std |      min |      max |
 |:--------|:--------------------------------------------------------|---------:|------:|---------:|---------:|
-| A       | demographics::logistic                                  | 0.279809 |   nan | 0.279809 | 0.279809 |
-| A       | demographics::logistic_class_weight                     | 0.275362 |   nan | 0.275362 | 0.275362 |
-| A       | demographics::gradient_boosting                         | 0.271956 |   nan | 0.271956 | 0.271956 |
-| A       | demographics::logistic_group_oversample                 | 0.271424 |   nan | 0.271424 | 0.271424 |
-| A       | demographics::gradient_boosting_group_oversample        | 0.266492 |   nan | 0.266492 | 0.266492 |
-| B       | compact_plus_module::logistic_class_weight              | 0.488306 |   nan | 0.488306 | 0.488306 |
-| B       | compact_plus_module::logistic                           | 0.485874 |   nan | 0.485874 | 0.485874 |
-| B       | compact_plus_module::logistic_group_oversample          | 0.484649 |   nan | 0.484649 | 0.484649 |
-| B       | compact::logistic                                       | 0.471545 |   nan | 0.471545 | 0.471545 |
-| B       | compact::logistic_class_weight                          | 0.462347 |   nan | 0.462347 | 0.462347 |
-| B       | compact::logistic_group_oversample                      | 0.459726 |   nan | 0.459726 | 0.459726 |
-| B       | compact_plus_trends::logistic_group_oversample          | 0.457691 |   nan | 0.457691 | 0.457691 |
-| B       | compact_plus_trends::logistic                           | 0.457307 |   nan | 0.457307 | 0.457307 |
-| B       | compact_plus_trends::logistic_class_weight              | 0.452503 |   nan | 0.452503 | 0.452503 |
-| B       | compact_plus_module::gradient_boosting                  | 0.427586 |   nan | 0.427586 | 0.427586 |
-| B       | compact_plus_trends::gradient_boosting                  | 0.422727 |   nan | 0.422727 | 0.422727 |
-| B       | compact::gradient_boosting                              | 0.420411 |   nan | 0.420411 | 0.420411 |
-| C       | compact_plus_module::logistic_group_oversample          | 0.53881  |   nan | 0.53881  | 0.53881  |
-| C       | compact_plus_module::gradient_boosting                  | 0.537823 |   nan | 0.537823 | 0.537823 |
-| C       | compact_plus_module::logistic_class_weight              | 0.536036 |   nan | 0.536036 | 0.536036 |
-| C       | compact_plus_module::logistic                           | 0.532467 |   nan | 0.532467 | 0.532467 |
-| C       | compact_plus_module::gradient_boosting_group_oversample | 0.515974 |   nan | 0.515974 | 0.515974 |
-| C       | compact::logistic                                       | 0.400657 |   nan | 0.400657 | 0.400657 |
-| C       | compact_plus_trends::logistic_class_weight              | 0.399273 |   nan | 0.399273 | 0.399273 |
-| C       | compact::logistic_group_oversample                      | 0.39363  |   nan | 0.39363  | 0.39363  |
-| C       | compact_plus_trends::logistic_group_oversample          | 0.392548 |   nan | 0.392548 | 0.392548 |
-| C       | compact::logistic_class_weight                          | 0.391677 |   nan | 0.391677 | 0.391677 |
-| C       | compact_plus_trends::gradient_boosting                  | 0.387157 |   nan | 0.387157 | 0.387157 |
-| C       | compact_plus_trends::logistic                           | 0.385444 |   nan | 0.385444 | 0.385444 |
+| A       | demographics::logistic                                  | 0.259325 |   nan | 0.259325 | 0.259325 |
+| A       | demographics::logistic_class_weight                     | 0.257308 |   nan | 0.257308 | 0.257308 |
+| A       | demographics::gradient_boosting_group_oversample        | 0.255628 |   nan | 0.255628 | 0.255628 |
+| A       | demographics::logistic_group_oversample                 | 0.248927 |   nan | 0.248927 | 0.248927 |
+| A       | demographics::gradient_boosting                         | 0.24208  |   nan | 0.24208  | 0.24208  |
+| B       | compact_plus_module::logistic                           | 0.443869 |   nan | 0.443869 | 0.443869 |
+| B       | compact_plus_module::logistic_class_weight              | 0.440548 |   nan | 0.440548 | 0.440548 |
+| B       | compact_plus_module::logistic_group_oversample          | 0.430726 |   nan | 0.430726 | 0.430726 |
+| B       | compact_plus_trends::gradient_boosting                  | 0.411811 |   nan | 0.411811 | 0.411811 |
+| B       | compact::gradient_boosting                              | 0.411393 |   nan | 0.411393 | 0.411393 |
+| B       | compact_plus_trends::logistic                           | 0.405433 |   nan | 0.405433 | 0.405433 |
+| B       | compact::logistic                                       | 0.404578 |   nan | 0.404578 | 0.404578 |
+| B       | compact_plus_module::gradient_boosting                  | 0.40032  |   nan | 0.40032  | 0.40032  |
+| B       | compact::logistic_class_weight                          | 0.396683 |   nan | 0.396683 | 0.396683 |
+| B       | compact_plus_trends::logistic_class_weight              | 0.394896 |   nan | 0.394896 | 0.394896 |
+| B       | compact_plus_module::gradient_boosting_group_oversample | 0.392938 |   nan | 0.392938 | 0.392938 |
+| B       | compact_plus_trends::gradient_boosting_group_oversample | 0.386009 |   nan | 0.386009 | 0.386009 |
+| C       | compact_plus_module::logistic                           | 0.522699 |   nan | 0.522699 | 0.522699 |
+| C       | compact_plus_module::gradient_boosting_group_oversample | 0.519126 |   nan | 0.519126 | 0.519126 |
+| C       | compact_plus_module::gradient_boosting                  | 0.516167 |   nan | 0.516167 | 0.516167 |
+| C       | compact_plus_module::logistic_class_weight              | 0.513213 |   nan | 0.513213 | 0.513213 |
+| C       | compact_plus_module::logistic_group_oversample          | 0.497495 |   nan | 0.497495 | 0.497495 |
+| C       | compact::gradient_boosting                              | 0.457631 |   nan | 0.457631 | 0.457631 |
+| C       | compact_plus_trends::gradient_boosting                  | 0.437782 |   nan | 0.437782 | 0.437782 |
+| C       | compact::gradient_boosting_group_oversample             | 0.434225 |   nan | 0.434225 | 0.434225 |
+| C       | compact_plus_trends::gradient_boosting_group_oversample | 0.408994 |   nan | 0.408994 | 0.408994 |
+| C       | compact::logistic_group_oversample                      | 0.396563 |   nan | 0.396563 | 0.396563 |
+| C       | compact::logistic_class_weight                          | 0.390433 |   nan | 0.390433 | 0.390433 |
+| C       | compact::logistic                                       | 0.388377 |   nan | 0.388377 | 0.388377 |
 
 ## Important limitations
 - Only 500 students and a limited number of positive outcomes are available; split-to-split variation is expected. A single split cannot estimate that variation.

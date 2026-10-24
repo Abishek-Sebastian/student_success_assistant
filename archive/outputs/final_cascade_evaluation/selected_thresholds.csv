@@ -1,0 +1,10 @@
+repeat,seed,stage,model,feature_set,threshold,development_precision_floor,development_precision_floor_feasible
+1,17,A,logistic_class_weight,demographics,0.6573891120172001,0.4,True
+1,17,B,logistic_class_weight,compact_plus_module,0.5851769239432739,0.4,True
+1,17,C,xgb_d2_group_weight,compact_plus_module,0.6665956020355227,0.4,True
+2,42,A,logistic_class_weight,demographics,0.7835921906348414,0.4,True
+2,42,B,logistic_class_weight,compact_plus_module,0.584042730977032,0.4,True
+2,42,C,xgb_d2_group_weight,compact_plus_module,0.608137458562851,0.4,True
+3,73,A,logistic_class_weight,demographics,0.7939900049114644,0.4,True
+3,73,B,logistic_class_weight,compact_plus_module,0.6342011695380708,0.4,True
+3,73,C,xgb_d2_group_weight,compact_plus_module,0.6418023109436035,0.4,True

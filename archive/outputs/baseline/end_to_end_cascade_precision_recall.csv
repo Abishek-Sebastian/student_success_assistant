@@ -1,0 +1,5 @@
+precision_floor,feasible_on_development,selected_model_A,selected_model_B,selected_model_C,threshold_A,threshold_B,threshold_C,development_precision,development_recall,development_flagged_students,test_precision,test_recall,test_flagged_students,test_tn,test_fp,test_fn,test_tp,test_students,test_positive_students
+0.5,True,extra_trees_balanced,logistic_unweighted,extra_trees_balanced,0.8921441897971107,0.19280574398129205,0.5554003724631726,0.5294117647058824,0.18,34,0.4,0.08,5,72,3,23,2,100,25
+0.4,True,extra_trees_balanced,logistic_unweighted,extra_trees_balanced,0.4839902583308197,0.13851227520181567,0.5554003724631726,0.410958904109589,0.3,73,0.3888888888888889,0.28,18,64,11,18,7,100,25
+0.3,True,extra_trees_balanced,logistic_unweighted,extra_trees_balanced,0.21257569200384868,0.10693613859136752,0.4590893348209717,0.3,0.57,190,0.4,0.64,40,51,24,9,16,100,25
+0.6,True,extra_trees_balanced,logistic_unweighted,extra_trees_balanced,0.8921441897971107,0.19280574398129205,0.7325635434196942,0.6190476190476191,0.13,21,0.6666666666666666,0.08,3,74,1,23,2,100,25

@@ -1,0 +1,22 @@
+{
+  "outer_seeds": [
+    17,
+    42,
+    73
+  ],
+  "precision_floor_selected_on_development": 0.4,
+  "mean_precision": 0.43042183711310794,
+  "mean_recall": 0.7200000000000001,
+  "mean_f1": 0.5376465239478938,
+  "mean_accuracy": 0.6866666666666666,
+  "mean_specificity": 0.6755555555555556,
+  "mean_balanced_accuracy": 0.6977777777777777,
+  "mean_mcc": 0.3487996989754179,
+  "mean_average_precision": 0.5688098392067528,
+  "mean_roc_auc": 0.7622222222222222,
+  "mean_flagged": 42.333333333333336,
+  "mean_tp": 18.0,
+  "mean_fp": 24.333333333333332,
+  "mean_fn": 7.0,
+  "mean_tn": 50.666666666666664
+}

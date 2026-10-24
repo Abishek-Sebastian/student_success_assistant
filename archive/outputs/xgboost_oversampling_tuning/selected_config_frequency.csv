@@ -1,0 +1,10 @@
+precision_floor,stage,config,feature_set,selection_count
+0.3,A,demographics::logistic,demographics,1
+0.3,B,compact_plus_module::logistic_class_weight,compact_plus_module,1
+0.3,C,compact_plus_module::xgb_d2_group_weight,compact_plus_module,1
+0.4,A,demographics::logistic,demographics,1
+0.4,B,compact_plus_module::logistic,compact_plus_module,1
+0.4,C,compact_plus_module::xgb_d2_group_oversample,compact_plus_module,1
+0.5,A,demographics::logistic,demographics,1
+0.5,B,compact_plus_module::logistic_class_weight,compact_plus_module,1
+0.5,C,compact_plus_module::xgb_d2_group_oversample,compact_plus_module,1

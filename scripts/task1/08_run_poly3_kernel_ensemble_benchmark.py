@@ -283,6 +283,7 @@ def main():
             dev_mask = cdf.student_id.astype(str).isin(dev_ids).to_numpy()
             scores = student_max_scores(cdf.loc[dev_mask].reset_index(drop=True), row_oof[dev_mask], dev_order)
             if failure:
+                scores = np.array(scores, dtype=float, copy=True)
                 scores[:] = np.nan
                 config_status[cfg["name"]] = failure
             else:

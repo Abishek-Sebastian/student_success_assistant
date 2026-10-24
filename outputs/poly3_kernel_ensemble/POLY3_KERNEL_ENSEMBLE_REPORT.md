@@ -17,11 +17,11 @@ Compare a degree-3 polynomial SVM with student-cluster bagging and AdaBoost, whi
 ## Results summary
 | config                                 | family             |   oof_ap_mean |   oof_ap_std |   test_ap_mean |   test_precision_mean |   test_recall_mean |   test_flagged_mean |   test_scored_mean |   precision_floor_pass_rate |   repeats |
 |:---------------------------------------|:-------------------|--------------:|-------------:|---------------:|----------------------:|-------------------:|--------------------:|-------------------:|----------------------------:|----------:|
-| poly3_svm_bagged_21_student_bootstraps | bagged_poly3_svm   |      0.528164 |    0.0315805 |       0.683631 |              0.423903 |           0.426667 |             25.3333 |            85.3333 |                    0.666667 |         3 |
-| logistic_class_weight                  | logistic           |      0.522683 |    0.0129974 |       0.592142 |              0.551282 |           0.346667 |             17.3333 |            85.3333 |                    0.666667 |         3 |
-| poly3_svm_class_weighted               | poly3_svm          |      0.503653 |    0.0246023 |       0.697425 |              0.447392 |           0.426667 |             24.6667 |            85.3333 |                    0.333333 |         3 |
-| gradient_boosting                      | gradient_boosting  |      0.495222 |    0.0371543 |       0.633431 |              0.403968 |           0.4      |             25      |            85.3333 |                    0.666667 |         3 |
-| poly3_svm_unweighted                   | poly3_svm          |      0.493081 |    0.0298337 |       0.606467 |              0.504413 |           0.373333 |             19.6667 |            85.3333 |                    0.666667 |         3 |
+| poly3_svm_bagged_21_student_bootstraps | bagged_poly3_svm   |      0.521279 |    0.0398699 |       0.683631 |              0.425205 |           0.466667 |             27.3333 |            85.3333 |                    0.666667 |         3 |
+| poly3_svm_unweighted                   | poly3_svm          |      0.504591 |    0.0466357 |       0.606467 |              0.413808 |           0.36     |             22      |            85.3333 |                    0.666667 |         3 |
+| logistic_class_weight                  | logistic           |      0.499987 |    0.0488117 |       0.592142 |              0.498937 |           0.333333 |             17.6667 |            85.3333 |                    1        |         3 |
+| poly3_svm_class_weighted               | poly3_svm          |      0.492868 |    0.0398279 |       0.697425 |              0.458333 |           0.466667 |             25.3333 |            85.3333 |                    1        |         3 |
+| gradient_boosting                      | gradient_boosting  |      0.474995 |    0.0524903 |       0.633431 |              0.427803 |           0.386667 |             23.3333 |            85.3333 |                    0.666667 |         3 |
 | poly3_svm_adaboost_10_rounds           | adaboost_poly3_svm |    nan        |  nan         |     nan        |              0        |           0        |              0      |             0      |                    0        |         3 |
 
 ## Boosting diagnostic
@@ -36,8 +36,8 @@ AdaBoost was included as an experimental combination, not assumed to work. With 
 
 
 ## Findings from this run
-- Highest mean development OOF AP was **poly3_svm_bagged_21_student_bootstraps** at **52.8%**.
-- Bagging OOF AP was 52.8%, versus 50.4% for the class-weighted polynomial SVM. However, mean held-out AP was 68.4% for bagging versus 69.7% for the class-weighted SVM.
-- The class-weighted polynomial SVM met the selected precision floor on 33% of outer splits; bagging did so on 67%. This argues against declaring bagging a clear winner from three splits.
+- Highest mean development OOF AP was **poly3_svm_bagged_21_student_bootstraps** at **52.1%**.
+- Bagging OOF AP was 52.1%, versus 49.3% for the class-weighted polynomial SVM. However, mean held-out AP was 68.4% for bagging versus 69.7% for the class-weighted SVM.
+- The class-weighted polynomial SVM met the selected precision floor on 100% of outer splits; bagging did so on 67%. This argues against declaring bagging a clear winner from three splits.
 - Stage C AP is computed only on test students with available C snapshots; students without a C score are treated as not flagged for Stage-C-only precision/recall. This is not a complete A/B/C cascade metric.
 - Failed model configurations: poly3_svm_adaboost_10_rounds. See the CSV error column for fold-level details.
