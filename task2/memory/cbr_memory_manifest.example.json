@@ -1,0 +1,17 @@
+{
+  "memory_version": 1,
+  "case_based_reasoning_schema_version": 1,
+  "case_count_initial_seed": 3,
+  "retrieval_metric": {
+    "formula": "0.65*semantic_similarity + 0.20*concept_overlap + 0.15*lexical_similarity",
+    "distance": "1 - similarity",
+    "weights": "POC defaults; not empirically optimized"
+  },
+  "label_policy": "Provisional labels treated as correct for assignment POC only; not independently verified.",
+  "golden_set_used": false,
+  "case_types": [
+    "learning_case",
+    "evaluator_error"
+  ],
+  "note": "Canonical records are JSONL; Chroma is a rebuildable retrieval index. Error cases preserve predicted_verdict and correct_verdict separately."
+}

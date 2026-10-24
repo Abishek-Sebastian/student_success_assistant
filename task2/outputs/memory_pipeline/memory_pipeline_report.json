@@ -1,0 +1,35 @@
+{
+  "created_at_utc": "2026-10-24T10:12:16.722726+00:00",
+  "input_path": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/memory/candidates/memory_candidates_nonrisk_only.csv",
+  "candidate_rows_after_validation": 5,
+  "evaluator_valid_predictions": 5,
+  "evaluator_failures_or_invalid": 0,
+  "potential_disagreements": 1,
+  "proposed_cases": 3,
+  "lesson_counts_input": {
+    "L1": 2,
+    "L2": 2,
+    "L3": 1
+  },
+  "lesson_counts_proposed": {
+    "L1": 2,
+    "L3": 1
+  },
+  "candidate_label_counts": {
+    "understood": 3,
+    "partial": 2
+  },
+  "predicted_verdict_counts": {
+    "understood": 4,
+    "partial": 1
+  },
+  "canonical_memory_cases_read_only": 0,
+  "golden_set_added_to_memory": false,
+  "canonical_memory_modified": false,
+  "chroma_rebuilt": false,
+  "label_warning": "Candidate labels are provisional. Disagreements are selection signals, not confirmed evaluator errors. Proposed cases are not approved memory.",
+  "outputs": {
+    "predictions_csv": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/outputs/memory_pipeline/candidate_evaluations.csv",
+    "proposals_jsonl": "/Users/abishek/Documents/Projects/student_success_assistant_new/task2/outputs/memory_pipeline/proposed_memory_cases.jsonl"
+  }
+}

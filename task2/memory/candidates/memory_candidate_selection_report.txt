@@ -1,0 +1,14 @@
+Task 2 memory candidate eligibility report
+==========================================
+Prediction file rows: 300
+Unique students in prediction file: 250
+Students classified non-risk (flag_end_to_end == 0 for every available row): 127
+Students with at least one risk flag across available rows: 123
+Non-golden labelled explanation rows eligible by student status: 160
+Unique eligible students represented in explanations: 102
+Non-golden explanation rows whose students are absent from prediction file (status unknown, excluded): 353
+Unique unknown-status students: 216
+
+Eligibility rule: include a student only if all available flag_end_to_end predictions are 0. Students with any flag=1 or absent from the predictions file are excluded. All 60 pre-labelled golden rows are excluded because input was the non-golden dataset.
+
+Important: this file is an eligibility-filtered candidate pool only. It has not been inserted into memory. API prediction errors were not used because a matching evaluator-predictions file was not provided. The labels remain provisional rubric-based labels, not independently verified ground truth.
