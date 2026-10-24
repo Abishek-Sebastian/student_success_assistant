@@ -1,0 +1,10 @@
+repeat,seed,precision_floor,stage,config,feature_set,model,sampling,balance
+1,17,0.4,A,demographics::logistic_class_weight,demographics,logistic_class_weight,none,balanced
+1,17,0.4,B,compact_plus_module::logistic_group_oversample,compact_plus_module,logistic_group_oversample,group_oversample,none
+1,17,0.4,C,compact_plus_module::rbf_svm_C1_gscale_cwnone,compact_plus_module,rbf_svm_C1_gscale_cwnone,none,none
+2,42,0.4,A,demographics::linear_svm_C1_cwnone,demographics,linear_svm_C1_cwnone,none,none
+2,42,0.4,B,compact_plus_module::logistic,compact_plus_module,logistic,none,none
+2,42,0.4,C,compact_plus_module::rbf_svm_C1_gscale_cwnone,compact_plus_module,rbf_svm_C1_gscale_cwnone,none,none
+3,73,0.4,A,demographics::gradient_boosting_group_oversample,demographics,gradient_boosting_group_oversample,group_oversample,none
+3,73,0.4,B,compact_plus_module::logistic,compact_plus_module,logistic,none,none
+3,73,0.4,C,compact_plus_module::rbf_svm_C1_gscale_group_os,compact_plus_module,rbf_svm_C1_gscale_group_os,group_oversample,none

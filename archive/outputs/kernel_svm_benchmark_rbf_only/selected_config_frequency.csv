@@ -1,0 +1,8 @@
+precision_floor,stage,config,feature_set,selection_count
+0.4,A,demographics::gradient_boosting_group_oversample,demographics,1
+0.4,A,demographics::linear_svm_C1_cwnone,demographics,1
+0.4,A,demographics::logistic_class_weight,demographics,1
+0.4,B,compact_plus_module::logistic,compact_plus_module,2
+0.4,B,compact_plus_module::logistic_group_oversample,compact_plus_module,1
+0.4,C,compact_plus_module::rbf_svm_C1_gscale_cwnone,compact_plus_module,2
+0.4,C,compact_plus_module::rbf_svm_C1_gscale_group_os,compact_plus_module,1

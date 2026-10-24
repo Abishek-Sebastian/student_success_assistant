@@ -1,0 +1,14 @@
+{
+  "memory_version": 1,
+  "source": "task2/data/development/development_cases.csv",
+  "source_sha256": "326b8af8a9ab210522b85f59ea010a9af50e52e4bfbeb737c5d31349b9c9a987",
+  "case_count": 18,
+  "label_source": "provided_human_label",
+  "allowed_splits": [
+    "development"
+  ],
+  "golden_data_used": false,
+  "model_generated_cases_allowed": false,
+  "retention_policy": "Only human-labelled development cases; no automatic model self-retention.",
+  "memory_sha256": "723abae8492d27369ac8572093a2f4ce182203f82ba85924f7699e8c84222362"
+}
