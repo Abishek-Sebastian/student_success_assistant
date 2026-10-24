@@ -442,6 +442,7 @@ def evaluate_one(
     row: dict,
     knowledge: dict,
     max_retries: int = 1,
+    use_memory: bool = True,
 ) -> dict:
     explanation = str(row.get("explanation_text", ""))
     lesson_id = str(row.get("lesson_id", ""))
@@ -462,10 +463,15 @@ def evaluate_one(
             "retrieved_cases": 0,
         }
 
-    cases = retrieve_cases(
-        lesson_id,
-        explanation,
-        exclude_explanation_id=explanation_id,
+    # The no-memory benchmark condition bypasses retrieval explicitly.
+    cases = (
+        retrieve_cases(
+            lesson_id,
+            explanation,
+            exclude_explanation_id=explanation_id,
+        )
+        if use_memory
+        else []
     )
     messages = build_messages(lesson_id, explanation, cases, knowledge)
     start = time.perf_counter()

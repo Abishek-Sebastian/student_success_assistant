@@ -75,19 +75,13 @@ The scripts use repository-root-relative default paths. Run them from the reposi
 
 The checked-in reports document multiple exploratory comparisons, not a guarantee of production performance. The kernel experiment notes report that RBF and degree-2 polynomial kernels were near-tied candidates for Stage C, without establishing a reliable end-to-end improvement. The degree-3 polynomial ensemble experiment is also exploratory. Review the relevant reports and evaluation artifacts before presenting a single model as the final recommendation.
 
-## Task 2: LLM explanation feedback
+## Task 2: LLM explanation feedback and memory
 
-Task 2 grades a student's explanation against the lesson rubric and returns structured feedback containing `explanation_id`, `verdict`, `got_right`, `missed`, and `hint`.
+Task 2 grades a student's explanation against `task2/knowledge/lesson_rubric.json` and returns a verdict (`understood`, `partial`, or `wrong`) with structured feedback. The current workflow uses one labelled dataset format per segment and keeps the label out of the inference payload.
 
 ### Configure the LLM endpoint
 
-Copy the example configuration and edit it locally:
-
-```bash
-cp task2/.env.example task2/.env
-```
-
-Set `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` as required by your OpenAI-compatible endpoint. The evaluator reads environment variables; to load values from the file into a Bash/Zsh shell, run from the repository root:
+Copy the example configuration and set `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in your shell or local `task2/.env` file. Never commit API keys or `.env`.
 
 ```bash
 set -a
@@ -95,171 +89,96 @@ source task2/.env
 set +a
 ```
 
-Never commit `.env` or expose API keys. The actual local `.env` file is intentionally not included in this project package.
+### Current data layout
 
-### Prepare and evaluate
+The dataset-generation script writes these canonical files:
 
-Run these commands from the repository root:
+- `task2/data/development/nonrisk_dataset.csv`: non-risk development examples eligible for memory construction.
+- `task2/data/evaluation/risk_dataset.csv`: risk-segment examples, used for a separate evaluation.
+- `task2/data/evaluation/golden_dataset.csv`: held-out golden examples, used for a separate evaluation.
+- `task2/data/dataset_generation_audit.json`: counts and checks from dataset generation.
 
-```bash
-python scripts/task2/task2_prepare_split.py
-python scripts/task2/task2_prepare_memory.py
-python scripts/task2/task2_evaluate.py --split golden --confirm-final-evaluation
-```
+The datasets retain their source columns, including `explanation_id`, `student_id`, `lesson_id`, `explanation_text`, `label`, and available provenance columns. Evaluation code must pass only `explanation_id`, `lesson_id`, and `explanation_text` to the evaluator. The `label` column is read only after predictions have been saved, for scoring. Do not add golden rows or derived copies to memory.
 
-The evaluator saves predictions before joining labels for scoring. Existing golden prediction artifacts are protected against accidental overwrite; use a fresh `--output-dir` for a new run. Do not use `--limit` for a full benchmark run.
+### Step 1: Generate the datasets
 
-Launch the interactive demo with:
-
-```bash
-streamlit run task2/app.py
-```
-
-To generate examples for Task 1 flagged students, first ensure the expected Task 1 prediction file exists, then run:
+Run from the repository root:
 
 ```bash
-python scripts/task2/task2_run_at_risk.py --limit 5
+python scripts/task2/create_task2_datasets.py
 ```
 
-The script's default prediction path is `outputs/eventual_dropout_aligned/test_predictions_precision_50.csv`; supply `--prediction-file` if using a different artifact.
+The script reads `data/task2/explanations_labelled_full.csv` and `outputs/final_cascade_evaluation/outer_test_student_predictions.csv`. A student is considered at risk if any prediction row has `flag_end_to_end == 1`. Provisional students absent from the prediction file are treated as non-risk. It validates and deduplicates development examples, keeps the golden segment separate, and writes an audit report.
 
-### Evaluation caveat and memory boundary
+### Step 2: Reset the Chroma index
 
-The provided 60 labelled explanations are the available labelled benchmark. The labels are kept separate from the inference inputs, and the evaluator does not pass them to the model. Do not use any of those 60 rows, duplicates, or derived cases as episodic memory. The approved memory file is empty by default; only independently verified and explicitly approved examples from outside the golden set may be added.
-
-Once results on the 60 rows have been inspected, further prompt/model changes and reruns are **iterative benchmark tracking**, not an untouched final-test estimate. Report this limitation honestly. The labels are reference annotations and may themselves contain errors; flag suspected issues rather than silently changing them.
-
-
-## Task 2: LLM Grading
-
-### Evaluation protocol
-
-The 60 explanations with supplied labels are the Task 2 golden evaluation set. All 60 rows are evaluated; no labelled row, label, or derived case may be used as grading memory.
-
-The grader uses the lesson rubric and the student's explanation to predict a verdict (`understood`, `partial`, or `wrong`) and generate structured feedback. Golden labels are loaded only after predictions have been generated and saved.
-
-Because we inspect the golden-set results to improve the system, subsequent scores represent **iterative benchmark performance**, not an untouched final test estimate.
-
-### Reset generated Task 2 artifacts
-
-First inspect the reset script's targets:
+This backs up and verifies the current Chroma directory before removing the index. It does not edit `task2/memory/approved_cases.jsonl`.
 
 ```bash
-bash scripts/task2/reset_task2_generated.sh --dry-run
+python scripts/task2/reset_chroma_memory.py --dry-run
+python scripts/task2/reset_chroma_memory.py
 ```
 
-If all listed paths are disposable generated artifacts, reset them:
+### Step 3: Build memory from non-risk development data
 
 ```bash
-bash scripts/task2/reset_task2_generated.sh
+python task2/pipeline/add_memory.py
 ```
 
-The reset removes only explicitly listed paths. It must not remove the original datasets, lesson knowledge, source code, or environment configuration.
+The default candidate input is `task2/data/development/nonrisk_dataset.csv`. The script validates the expected columns, evaluates/ranks candidates, writes pipeline outputs under `task2/outputs/memory_pipeline/`, appends eligible records to `task2/memory/approved_cases.jsonl`, and rebuilds Chroma unless `--skip-chroma` is passed. Its current POC policy accepts eligible non-golden candidate labels as reference labels; this is a provisional assumption, not independent ground truth. Keep this limitation explicit when interpreting results. Do not seed memory from either evaluation dataset.
 
-### Prepare the evaluation data and memory
+The default build considers all eligible candidates; there are only three lessons in this dataset, so no artificial total or per-lesson selection cap is applied. For a smoke test only, use `--limit 5 --skip-chroma`; this limits evaluation to the first five input rows and does not represent a complete memory build.
 
-Run these commands from the repository root:
+### Step 4: Run the demo
 
 ```bash
-python scripts/task2/task2_prepare_split.py
-python scripts/task2/task2_prepare_memory.py
+python scripts/task2/task2_demo.py --lesson-id L1 --explanation "Your example explanation here"
 ```
 
-The preparation script writes:
-- `task2/data/evaluation/golden_inputs.csv`: all 60 labelled explanations, without the label column.
-- `task2/data/evaluation/golden_labels.csv`: reference labels kept separate from inference inputs.
-- `task2/data/split_manifest.json`: row counts, class counts, and file hashes.
+The demo uses the same `task2/src/evaluator.py` and memory backend as the benchmark scripts.
 
-The memory preparation script must not import the supplied labelled dataset. Memory cases, if added in the future, must come from outside the golden set and be independently verified and explicitly approved.
+### Step 5: Run the four benchmark experiments
 
-### Run the golden evaluation
-
-Use the configured LLM endpoint and model from the environment. Run:
+The current benchmark script runs four conditions with one command:
 
 ```bash
-python scripts/task2/task2_evaluate.py --confirm-final-evaluation
+python scripts/task2/task2_evaluate.py --dataset all --memory both
 ```
 
-The command generates and saves predictions before joining reference labels for scoring. It refuses to overwrite existing golden prediction artifacts by default. To preserve previous runs, use a new output directory for each experiment.
+The four conditions are:
 
-Expected output files under `task2/outputs/golden/` include:
+1. `risk__memory_off`
+2. `risk__memory_on`
+3. `golden__memory_off`
+4. `golden__memory_on`
 
-- `predictions.csv` and `predictions.jsonl`: model outputs.
-- `scored_predictions.csv`: predictions joined with reference labels for analysis.
-- `metrics.json`: accuracy, per-class metrics, confusion matrix, coverage, latency, and validation statistics.
+To run one condition or one dataset, use `--dataset risk|golden|all` and `--memory off|on|both`. Each invocation creates a timestamped folder under `task2/outputs/benchmark/` (or use `--run-id` to name it). Each condition saves `predictions.csv`, `prediction_manifest.json`, `scored_predictions.csv`, and `metrics.json`; the run root also receives `benchmark_summary.json`.
 
-Review failures, invalid outputs, feedback quality, and per-class errors alongside accuracy. Keep each experiment's model, prompt, and configuration identifiable.
+The evaluator receives only `explanation_id`, `lesson_id`, and `explanation_text`. The script writes raw predictions to disk before it separately loads the `label` column for scoring. The no-memory condition explicitly bypasses retrieval in `evaluate_one`; it does not depend on an empty index. The memory-on condition uses the canonical development memory. Since the current POC memory builder explicitly accepts provisional development labels as reference labels, the benchmark permits records marked `approved_for_poc` in the memory-on condition and records that policy in the prediction manifest. Golden examples/labels are never eligible for memory.
 
-### Important data policy
+Metrics include accuracy, macro-F1, weighted-F1, per-class precision/recall/F1, confusion matrix, valid/failed prediction counts, mean latency, and mean retrieved-case count. Invalid/failed outputs are excluded from classification scores but included in the invalid prediction rate. Compare memory-on/off runs on the same dataset and model configuration; preserve each run folder rather than overwriting prior results.
 
-- Never add any of the 60 golden rows or their labels to memory.
-- Never expose golden labels to the model during inference.
-- Do not silently overwrite previous experiment results.
-- Preserve original labels; document any independently verified corrections.
-- Do not report iteratively tuned golden-set scores as an untouched test result.
+`task2/pipeline/seed_poc_memory.py` is retained in the pipeline directory for explicit/manual POC seeding only. It is not part of the default workflow and should not be run before the automated memory build unless deliberately intended.
 
-## Task 2 Automated Case Memory Update
+### Scripts being retired from the active workflow
 
-This bundle updates three project files:
+The old split-file workflow is superseded by the single labelled dataset files above. Do not use these legacy scripts/files in the new workflow:
 
-- `task2/pipeline/add_memory.py`
-- `task2/src/evaluator.py`
-- `task2/src/vector_memory.py`
+- `scripts/task2/task2_prepare_split.py`
+- `scripts/task2/task2_prepare_memory.py`
+- `scripts/task2/task2_run_at_risk.py` (the new risk evaluation uses `risk_dataset.csv` directly)
+- The previous `scripts/task2/task2_evaluate.py` implementation is replaced by the four-condition benchmark runner in this bundle.
+- `task2/data/development/development_cases.csv`
+- `task2/data/evaluation/golden_inputs.csv`
+- `task2/data/evaluation/golden_labels.csv`
+- `task2/data/evaluation/golden_manifest.json`
+- `task2/data/split_manifest.json`
 
-### Behavior
+Delete the listed local files only after applying and checking the replacement workflow. The standalone `task2_build_memory_index.py` is optional because the memory builder rebuilds Chroma by default. Keep it only if you want a separate manual index-rebuild command. Update tests to the current labelled dataset layout before running them.
 
-1. Selects candidate explanations using semantic, lexical, rubric-concept and coverage proxies. SentenceTransformer cosine similarity is used for semantic similarity when available; TF-IDF is the documented fallback.
-2. Selects diverse candidates while favoring lesson coverage.
-3. Automatically adds selected candidates whose evaluator verdict agrees with a provisional candidate label as `learning_case` records with `approval_status=approved_for_poc`, `label_source=poc_assumed_provisional`, and explicit provisional provenance. These are pseudo-labelled examples, not ground truth.
-4. Automatically adds verified matches as `learning_case` records when source and label status indicate trusted ground truth.
-5. Calls the configured API LLM to produce `error_type`, `error_description`, `correction_principle`, and `supporting_evidence` only when a trusted ground-truth label disagrees with the evaluator. If the label is provisional, a disagreement is not called an evaluator error and is not auto-added to canonical memory.
-6. Never promotes golden-set examples. Chroma rebuilding is optional and explicitly requested.
-7. Provisional POC records are excluded from evaluator retrieval by default. Set `TASK2_ALLOW_PROVISIONAL_MEMORY=1` only for development experiments that intentionally use pseudo-labelled cases. Keep it unset for final evaluation.
+### Evaluation caveat
 
-### Install
-
-From the project root, extract the zip and copy the three files to their matching paths, replacing the current versions after backing them up.
-
-### Recommended first run
-
-A five-row smoke test will auto-add matching provisional examples to canonical memory, but will not create an evaluator-error case from an unverified disagreement:
-
-```bash
-python task2/pipeline/add_memory.py --limit 5 --max-selected 3
-```
-
-To also rebuild the Chroma index after adding cases (requires `chromadb` and `sentence-transformers`):
-
-```bash
-python task2/pipeline/add_memory.py --limit 5 --max-selected 3 --rebuild-chroma
-```
-
-To prevent provisional cases from being added:
-
-```bash
-python task2/pipeline/add_memory.py --limit 5 --max-selected 3 --no-provisional-learning-cases
-```
-
-For a memory-assisted POC run using provisional cases with the TF-IDF backend:
-
-```bash
-export TASK2_ALLOW_PROVISIONAL_MEMORY=1
-export TASK2_RETRIEVAL_BACKEND=tfidf
-python task2/pipeline/add_memory.py --limit 5 --max-selected 3
-```
-
-The API configuration remains controlled by `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY`; do not hard-code credentials.
-
-### Outputs
-
-- `task2/outputs/memory_pipeline/candidate_evaluations.csv`
-- `task2/outputs/memory_pipeline/proposed_memory_cases.jsonl`
-- `task2/outputs/memory_pipeline/memory_pipeline_report.json`
-- Canonical records appended to `task2/memory/approved_cases.jsonl` only under the promotion rules above.
-
-### Important interpretation
-
-A match to a provisional label is a pseudo-label agreement signal, not independent verification. `approved_for_poc` records should not be used in final benchmark evaluation unless the experiment explicitly calls for provisional-memory ablation. Error-correction records require trusted reference labels.
+If the golden results have already been inspected and used to tune prompts, model choice, or memory, report them as iterative benchmark tracking rather than an untouched final-test estimate. Preserve labels and document any independently verified corrections instead of silently changing them.
 
 
 ## Outputs, documentation, and archive

@@ -1,254 +1,188 @@
 #!/usr/bin/env python3
-"""Evaluate Task 2 against the labelled benchmark.
+"""Run the four Task 2 benchmark conditions and save predictions/metrics.
 
-Predictions are generated and saved before the golden labels are loaded.
-Previously inspected benchmark results must be reported as iterative tracking,
-not as an untouched final-test estimate.
+Conditions: risk/golden x memory off/on. Labels are deliberately loaded only
+AFTER the raw prediction CSV has been written.
 """
+from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    f1_score,
-)
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-from task2.src.evaluator import evaluate_one, load_knowledge, VALID_STATUSES  # noqa: E402
+from task2.src.evaluator import VALID_STATUSES, VERDICTS, evaluate_one, load_knowledge  # noqa: E402
 
-TASK2_DIR = ROOT / "task2"
-EVAL_DIR = TASK2_DIR / "data" / "evaluation"
-OUTPUT_DIR = TASK2_DIR / "outputs" / "benchmark"
-INPUTS_PATH = EVAL_DIR / "golden_inputs.csv"
-LABELS_PATH = EVAL_DIR / "golden_labels.csv"
-MANIFEST_PATH = EVAL_DIR / "golden_manifest.json"
-
-CLASSES = ["understood", "partial", "wrong"]
+DATASETS = {
+    "risk": ROOT / "task2/data/evaluation/risk_dataset.csv",
+    "golden": ROOT / "task2/data/evaluation/golden_dataset.csv",
+}
+INPUT_COLUMNS = ["explanation_id", "lesson_id", "explanation_text"]
+LABEL_COLUMN = "label"
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--confirm-final-evaluation",
-        action="store_true",
-        help="Confirm that you understand this is an iterative benchmark "
-             "if results have previously been inspected.",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Optional small smoke test; do not use its metrics as benchmark results.",
-    )
-    args = parser.parse_args()
+def json_safe(value: Any) -> Any:
+    if pd.isna(value):
+        return None
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
 
-    if not INPUTS_PATH.exists():
-        raise FileNotFoundError(f"Missing benchmark inputs: {INPUTS_PATH}")
-    if not MANIFEST_PATH.exists():
-        raise FileNotFoundError(f"Missing benchmark manifest: {MANIFEST_PATH}")
 
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    inputs = pd.read_csv(INPUTS_PATH).fillna("")
-    if args.limit is not None:
-        if args.limit < 1:
-            raise ValueError("--limit must be at least 1")
-        inputs = inputs.head(args.limit).copy()
+def evaluate_condition(dataset_name: str, memory_enabled: bool, out_dir: Path, max_retries: int) -> dict[str, Any]:
+    dataset_path = DATASETS[dataset_name]
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Dataset not found: {dataset_path}")
 
-    required = {"explanation_id", "lesson_id", "explanation_text"}
-    missing = required - set(inputs.columns)
+    # Intentionally do not read the label column during inference.
+    inputs = pd.read_csv(dataset_path, usecols=INPUT_COLUMNS, dtype=str, keep_default_na=False)
+    missing = set(INPUT_COLUMNS) - set(inputs.columns)
     if missing:
-        raise ValueError(f"Missing columns in golden inputs: {sorted(missing)}")
-
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    prediction_path = OUTPUT_DIR / f"predictions_{run_id}.csv"
-    metrics_path = OUTPUT_DIR / f"metrics_{run_id}.json"
+        raise ValueError(f"{dataset_path} missing required input columns: {sorted(missing)}")
 
     knowledge = load_knowledge()
-    records = []
+    run_name = f"{dataset_name}__memory_{'on' if memory_enabled else 'off'}"
+    run_dir = out_dir / run_name
+    run_dir.mkdir(parents=True, exist_ok=True)
+    predictions: list[dict[str, Any]] = []
     total = len(inputs)
-    print(f"Generating predictions for {total} examples.")
-    # print("Golden labels have not been loaded.")
 
-    for i, (_, series) in enumerate(inputs.iterrows(), start=1):
-        row = series.to_dict()
-        started = time.perf_counter()
+    # The current POC memory is explicitly marked approved_for_poc. Permit that
+    # source only in memory-on runs; the evaluator still excludes golden cases.
+    if memory_enabled:
+        os.environ["TASK2_ALLOW_PROVISIONAL_MEMORY"] = "1"
+
+    print(f"\n=== {run_name}: {total} examples ===")
+    for index, row in inputs.iterrows():
+        payload = {column: str(row[column]) for column in INPUT_COLUMNS}
         try:
-            result = evaluate_one(row, knowledge)
-            if not isinstance(result, dict):
-                result = {
-                    "explanation_id": row["explanation_id"],
-                    "verdict": None,
-                    "status": "invalid_result",
-                    "error": f"Expected dict, got {type(result).__name__}",
-                }
-        except Exception as exc:
+            result = evaluate_one(payload, knowledge, max_retries=max_retries, use_memory=memory_enabled)
+        except Exception as exc:  # Keep the run complete and preserve failures.
             result = {
-                "explanation_id": row["explanation_id"],
+                "explanation_id": payload["explanation_id"],
                 "verdict": None,
-                "status": "exception",
+                "got_right": "",
+                "missed": "",
+                "hint": "",
+                "status": "runner_exception",
                 "error": f"{type(exc).__name__}: {exc}",
+                "retrieved_cases": 0,
+                "latency_seconds": None,
             }
-
         record = {
-            "explanation_id": str(row["explanation_id"]),
-            "lesson_id": str(row["lesson_id"]),
-            "verdict": result.get("verdict"),
-            "status": result.get("status", "missing_status"),
-            "latency_seconds": result.get(
-                "latency_seconds", round(time.perf_counter() - started, 3)
-            ),
-            "attempt_count": result.get("attempt_count"),
-            "retrieved_cases": result.get("retrieved_cases"),
-            "feedback_field_repairs": json.dumps(
-                result.get("feedback_field_repairs", []), ensure_ascii=False
-            ),
-            "validation_errors": json.dumps(
-                result.get("validation_errors", []), ensure_ascii=False
-            ),
-            "error": result.get("error", ""),
+            **payload,
+            "predicted_verdict": result.get("verdict"),
             "got_right": result.get("got_right", ""),
             "missed": result.get("missed", ""),
             "hint": result.get("hint", ""),
+            "status": result.get("status", "unknown"),
+            "attempt_count": result.get("attempt_count"),
+            "latency_seconds": result.get("latency_seconds"),
+            "retrieved_cases": result.get("retrieved_cases", 0),
+            "validation_errors": json.dumps(result.get("validation_errors", []), ensure_ascii=False),
+            "error": result.get("error", ""),
         }
-        records.append(record)
-        print(
-            f"[{i}/{total}] {record['explanation_id']}: "
-            f"{record['verdict']} ({record['status']})"
-        )
+        predictions.append(record)
+        if (index + 1) % 10 == 0 or index + 1 == total:
+            print(f"[{index + 1}/{total}] {payload['explanation_id']}: {record['predicted_verdict'] or 'INVALID'} ({record['status']})")
 
-    # Persist all model outputs before opening the labels file.
-    predictions = pd.DataFrame(records)
-    predictions.to_csv(prediction_path, index=False)
-    print(f"\nSaved predictions first: {prediction_path}")
-
-    # Only now load the golden labels.
-    if not LABELS_PATH.exists():
-        raise FileNotFoundError(f"Missing benchmark labels: {LABELS_PATH}")
-    labels = pd.read_csv(LABELS_PATH)
-
-    if not {"explanation_id", "label"}.issubset(labels.columns):
-        raise ValueError("Golden labels must contain explanation_id and label.")
-    if labels["explanation_id"].astype(str).duplicated().any():
-        raise ValueError("Duplicate explanation_id values in golden labels.")
-
-    scored = predictions.merge(
-        labels[["explanation_id", "label"]].assign(
-            explanation_id=lambda df: df["explanation_id"].astype(str)
-        ),
-        on="explanation_id",
-        how="left",
-        validate="one_to_one",
-    )
-
-    if scored["label"].isna().any():
-        missing_ids = scored.loc[scored["label"].isna(), "explanation_id"].tolist()
-        raise ValueError(f"Labels missing for prediction IDs: {missing_ids[:10]}")
-
-    valid = scored[
-        scored["status"].isin(VALID_STATUSES)
-        & scored["verdict"].isin(CLASSES)
-    ].copy()
-
-    failures = scored.loc[~scored.index.isin(valid.index)].copy()
-
-    metrics = {
-        "run_id": run_id,
+    predictions_df = pd.DataFrame(predictions)
+    predictions_path = run_dir / "predictions.csv"
+    predictions_df.to_csv(predictions_path, index=False)
+    # Durable checkpoint: predictions are persisted before the labels are read.
+    (run_dir / "prediction_manifest.json").write_text(json.dumps({
+        "dataset": dataset_name,
+        "memory_enabled": memory_enabled,
+        "input_path": str(dataset_path),
+        "prediction_path": str(predictions_path),
+        "prediction_rows": len(predictions_df),
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "evaluation_type": "iterative_benchmark_tracking",
-        "warning": (
-            "The labelled examples have been inspected during development. "
-            "These metrics are not an untouched final-test estimate."
-        ),
-        "manifest_split_version": manifest.get("split_version"),
-        "n_inputs": int(len(scored)),
-        "n_successfully_scored": int(len(valid)),
-        "n_failed_or_invalid": int(len(failures)),
-        "status_counts": {
-            str(k): int(v)
-            for k, v in predictions["status"].value_counts(dropna=False).items()
-        },
-        "feedback_repair_count": int(
-            predictions["status"].isin(
-                {
-                    "ok_with_feedback_repair",
-                    "recovered_after_retry_with_feedback_repair",
-                }
-            ).sum()
-        ),
-        "accuracy_on_successful_predictions": None,
-        "macro_f1_on_successful_predictions": None,
-        "classification_report": {},
-        "confusion_matrix_labels_order": CLASSES,
-        "confusion_matrix": [],
-        "failure_ids": failures["explanation_id"].astype(str).tolist(),
-    }
+        "label_column_loaded_for_inference": False,
+        "memory_policy": "retrieval explicitly bypassed" if not memory_enabled else "canonical development memory; POC provisional cases permitted",
+    }, indent=2) + "\n", encoding="utf-8")
 
-    if len(valid):
-        y_true = valid["label"].astype(str)
-        y_pred = valid["verdict"].astype(str)
-        metrics["accuracy_on_successful_predictions"] = float(
-            accuracy_score(y_true, y_pred)
-        )
-        metrics["macro_f1_on_successful_predictions"] = float(
-            f1_score(y_true, y_pred, labels=CLASSES, average="macro", zero_division=0)
-        )
-        metrics["classification_report"] = classification_report(
-            y_true,
-            y_pred,
-            labels=CLASSES,
-            output_dict=True,
-            zero_division=0,
-        )
-        metrics["confusion_matrix"] = confusion_matrix(
-            y_true, y_pred, labels=CLASSES
-        ).tolist()
-
-    metrics_path.write_text(
-        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+    # Labels are first accessed only after predictions have been saved.
+    labels_df = pd.read_csv(dataset_path, usecols=["explanation_id", LABEL_COLUMN], dtype=str, keep_default_na=False)
+    scoring = predictions_df[["explanation_id", "predicted_verdict", "status"]].merge(
+        labels_df, on="explanation_id", how="left", validate="one_to_one"
     )
+    if scoring[LABEL_COLUMN].eq("").any() or scoring[LABEL_COLUMN].isna().any():
+        raise ValueError(f"Missing labels while scoring {dataset_name}")
 
-    print("\n=== Iterative benchmark results ===")
-    print(f"Examples: {len(scored)}")
-    print(f"Successfully scored: {len(valid)}")
-    print(f"Failed/invalid: {len(failures)}")
-    print(f"Feedback repairs: {metrics['feedback_repair_count']}")
-    if len(valid):
-        print(f"Accuracy (successful predictions): "
-              f"{metrics['accuracy_on_successful_predictions']:.4f}")
-        print(f"Macro-F1 (successful predictions): "
-              f"{metrics['macro_f1_on_successful_predictions']:.4f}")
-        print("\nClassification report:")
-        print(classification_report(
-            valid["label"].astype(str),
-            valid["verdict"].astype(str),
-            labels=CLASSES,
-            zero_division=0,
-        ))
-        print("Confusion matrix (rows=true, columns=predicted):")
-        print(pd.DataFrame(
-            metrics["confusion_matrix"],
-            index=CLASSES,
-            columns=CLASSES,
-        ))
+    valid_label_mask = scoring[LABEL_COLUMN].isin(VERDICTS)
+    valid_pred_mask = scoring["predicted_verdict"].isin(VERDICTS) & scoring["status"].isin(VALID_STATUSES)
+    scored = scoring[valid_label_mask & valid_pred_mask].copy()
+    labels_order = ["understood", "partial", "wrong"]
+    if len(scored):
+        y_true = scored[LABEL_COLUMN].tolist()
+        y_pred = scored["predicted_verdict"].tolist()
+        report = classification_report(y_true, y_pred, labels=labels_order, output_dict=True, zero_division=0)
+        metrics = {
+            "accuracy": float(accuracy_score(y_true, y_pred)),
+            "macro_f1": float(f1_score(y_true, y_pred, labels=labels_order, average="macro", zero_division=0)),
+            "weighted_f1": float(f1_score(y_true, y_pred, labels=labels_order, average="weighted", zero_division=0)),
+            "confusion_matrix_labels_order": labels_order,
+            "confusion_matrix": confusion_matrix(y_true, y_pred, labels=labels_order).tolist(),
+            "classification_report": report,
+        }
     else:
-        print("No valid predictions to score; inspect the prediction CSV.")
+        metrics = {"accuracy": None, "macro_f1": None, "weighted_f1": None, "confusion_matrix_labels_order": labels_order, "confusion_matrix": [[0] * 3 for _ in range(3)], "classification_report": {}, "note": "No valid predictions available for scoring."}
 
-    print(f"\nMetrics saved to: {metrics_path}")
-    print(f"Predictions saved to: {prediction_path}")
+    metrics.update({
+        "dataset": dataset_name,
+        "memory_enabled": memory_enabled,
+        "total_examples": int(len(scoring)),
+        "valid_predictions_scored": int(len(scored)),
+        "invalid_or_failed_predictions": int(len(scoring) - len(scored)),
+        "invalid_prediction_rate": float(1 - len(scored) / len(scoring)) if len(scoring) else None,
+        "mean_latency_seconds": float(pd.to_numeric(predictions_df["latency_seconds"], errors="coerce").mean()) if len(predictions_df) else None,
+        "mean_retrieved_cases": float(pd.to_numeric(predictions_df["retrieved_cases"], errors="coerce").fillna(0).mean()) if len(predictions_df) else 0.0,
+        "predictions_path": str(predictions_path),
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+    })
+    metrics_path = run_dir / "metrics.json"
+    metrics_path.write_text(json.dumps(metrics, indent=2, ensure_ascii=False, default=json_safe) + "\n", encoding="utf-8")
+    scoring.to_csv(run_dir / "scored_predictions.csv", index=False)
+    print(f"Saved predictions: {predictions_path}")
+    print(f"Saved metrics: {metrics_path}")
+    print(f"Valid scored: {len(scored)}/{len(scoring)}; accuracy={metrics['accuracy']}")
+    return metrics
 
-    if args.limit is not None:
-        print("NOTE: --limit was used; this was a smoke test, not a full benchmark.")
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset", choices=["risk", "golden", "all"], default="all")
+    parser.add_argument("--memory", choices=["off", "on", "both"], default="both")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "task2/outputs/benchmark")
+    parser.add_argument("--run-id", default=None, help="Optional run folder name; defaults to a UTC timestamp.")
+    parser.add_argument("--max-retries", type=int, default=1)
+    args = parser.parse_args()
+    if args.max_retries < 0:
+        parser.error("--max-retries must be >= 0")
+
+    run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_root = args.output_dir / run_id
+    run_root.mkdir(parents=True, exist_ok=True)
+    datasets = ["risk", "golden"] if args.dataset == "all" else [args.dataset]
+    memory_modes = [False, True] if args.memory == "both" else [args.memory == "on"]
+    summary = []
+    for dataset_name in datasets:
+        for memory_enabled in memory_modes:
+            summary.append(evaluate_condition(dataset_name, memory_enabled, run_root, args.max_retries))
+
+    summary_path = run_root / "benchmark_summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False, default=json_safe) + "\n", encoding="utf-8")
+    print(f"\nAll requested experiments complete. Summary: {summary_path}")
 
 
 if __name__ == "__main__":

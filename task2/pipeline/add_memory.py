@@ -29,7 +29,7 @@ if str(ROOT) not in sys.path:
 
 from task2.src.evaluator import call_chat_api, evaluate_one, load_knowledge  # noqa: E402
 
-CANDIDATES_PATH = ROOT / "task2/memory/candidates/memory_candidates_nonrisk_only.csv"
+CANDIDATES_PATH = ROOT / "task2/data/development/nonrisk_dataset.csv"
 CANONICAL_MEMORY_PATH = ROOT / "task2/memory/approved_cases.jsonl"
 OUTPUT_DIR = ROOT / "task2/outputs/memory_pipeline"
 VALID_LABELS = {"understood", "partial", "wrong"}
@@ -189,7 +189,7 @@ def evaluate_candidates(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
-def rank_candidates(evaluated: pd.DataFrame, canonical: list[dict[str, Any]], max_selected: int, max_per_lesson: int, duplicate_threshold: float) -> tuple[pd.DataFrame, str]:
+def rank_candidates(evaluated: pd.DataFrame, canonical: list[dict[str, Any]], max_selected: int | None, max_per_lesson: int | None, duplicate_threshold: float) -> tuple[pd.DataFrame, str]:
     if evaluated.empty:
         return evaluated.copy(), "none"
     knowledge = load_knowledge()
@@ -254,13 +254,13 @@ def rank_candidates(evaluated: pd.DataFrame, canonical: list[dict[str, Any]], ma
         norm = normalize_text(row["explanation_text"])
         if norm in existing_by_lesson.get(lesson, set()):
             continue
-        if lesson_counts.get(lesson, 0) >= max_per_lesson:
+        if max_per_lesson is not None and lesson_counts.get(lesson, 0) >= max_per_lesson:
             continue
         previous = chosen_by_lesson.get(lesson, [])
         selected.append(idx)
         chosen_by_lesson.setdefault(lesson, []).append(str(row["explanation_text"]))
         lesson_counts[lesson] = lesson_counts.get(lesson, 0) + 1
-        if len(selected) >= max_selected:
+        if max_selected is not None and len(selected) >= max_selected:
             break
     ranked["selected_for_memory"] = ranked.index.isin(selected)
     ranked["selection_reason"] = ranked.apply(lambda r: "lesson_coverage_and_concept_coverage_no_similarity_gate" if r["selected_for_memory"] else "not_selected", axis=1)
@@ -380,16 +380,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Automatically build Task 2 memory from development candidates.")
     parser.add_argument("--input", type=Path, default=CANDIDATES_PATH)
     parser.add_argument("--limit", type=int, default=None, help="Evaluate first N rows for a smoke test.")
-    parser.add_argument("--max-selected", type=int, default=30)
-    parser.add_argument("--max-per-lesson", type=int, default=12)
+    parser.add_argument("--max-selected", type=int, default=None, help="Maximum selected candidates; default None selects all eligible candidates.")
+    parser.add_argument("--max-per-lesson", type=int, default=None, help="Maximum selected candidates per lesson; default None imposes no per-lesson cap.")
     parser.add_argument("--duplicate-threshold", type=float, default=0.85)
     parser.add_argument("--rebuild-chroma", action="store_true", help="Rebuild Chroma after memory changes (also rebuilt by default unless --skip-chroma).")
     parser.add_argument("--skip-chroma", action="store_true", help="Skip Chroma rebuild for a CSV-only smoke test.")
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be at least 1")
-    if args.max_selected < 1 or args.max_per_lesson < 1:
-        parser.error("--max-selected and --max-per-lesson must be positive")
+    if args.max_selected is not None and args.max_selected < 1:
+        parser.error("--max-selected must be positive when provided")
+    if args.max_per_lesson is not None and args.max_per_lesson < 1:
+        parser.error("--max-per-lesson must be positive when provided")
     if not 0 <= args.duplicate_threshold <= 1:
         parser.error("--duplicate-threshold must be between 0 and 1")
     if not args.input.exists():
