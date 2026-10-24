@@ -16,6 +16,7 @@ A small student-risk and learning-feedback project built for the Student Success
 .
 ├── README.md                    # Single project README
 ├── data/                        # Source data and Task 1 snapshot datasets
+├── deliverables/                # All submissions are present here
 ├── notebooks/                   # Task 1 EDA and feature-discovery notebooks
 ├── scripts/
 │   ├── task1/                   # Task 1 dataset/model/benchmark scripts
@@ -172,9 +173,4 @@ Install dependencies with `pip install -r requirements.txt`. API credentials mus
 
 ## Submission checklist
 
-- [ ] Confirm the notebooks and scripts run from a clean environment.
-- [ ] Recheck current Task 1 metrics and clearly state the target/evaluation protocol.
-- [ ] Recheck Task 2 metrics, error cases, feedback examples, and the golden-set limitation.
-- [ ] Complete the research memo comparing at least three LLM options and explaining when small ML models are preferable.
-- [ ] Add the required note describing AI tools used and what they were used for.
-- [ ] Verify no API keys, private environment files, or unauthorized student data are committed.
+All submission deliverables are present in deliverables/ folder.
